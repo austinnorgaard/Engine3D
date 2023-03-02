@@ -39,22 +39,11 @@ bool Engine3D::OnUserCreate () {
 
 	//	};
 
-	meshCube.loadFromObjectFile ("VideoShip.obj");
+	meshCube.loadFromObjectFile ("teapot.obj");
 
 
 	// Projection Matrix
-	float fNear = 0.1f;
-	float fFar = 1000.0f;
-	float fFov = 90.0f;
-	float fAspectRatio = (float) ScreenHeight () / (float) ScreenWidth ();
-	float fFovRad = 1.0f / tanf (fFov * 0.5f / 180.0f * 3.14159f);
-
-	projMat.mat[0][0] = fAspectRatio * fFovRad;
-	projMat.mat[1][1] = fFovRad;
-	projMat.mat[2][2] = fFar / (fFar - fNear);
-	projMat.mat[3][2] = (-fFar * fNear) / (fFar - fNear);
-	projMat.mat[2][3] = 1.0f;
-	projMat.mat[3][3] = 0.0f;
+	projMat = projMat.project (90.0f, (float) ScreenHeight () / (float) ScreenWidth (), 0.1f, 1000.0f);
 
 	return true;
 }
@@ -71,101 +60,73 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	fTheta += 1.0f * fElapsedTime;
 
 	// Rotation Z
-	matRotZ.mat[0][0] = cosf (fTheta);
-	matRotZ.mat[0][1] = sinf (fTheta);
-	matRotZ.mat[1][0] = -sinf (fTheta);
-	matRotZ.mat[1][1] = cosf (fTheta);
-	matRotZ.mat[2][2] = 1;
-	matRotZ.mat[3][3] = 1;
+	matRotZ = matRotZ.rotateZ (fTheta * 0.5f);
 
 	// Rotation X
-	matRotX.mat[0][0] = 1;
-	matRotX.mat[1][1] = cosf (fTheta);
-	matRotX.mat[1][2] = sinf (fTheta);
-	matRotX.mat[2][1] = -sinf (fTheta);
-	matRotX.mat[2][2] = cosf (fTheta);
-	matRotX.mat[3][3] = 1;
+	matRotX = matRotX.rotateX (fTheta);
+
+	mat4x4 transMat;
+	transMat = transMat.translate (0.0f, 0.0f, 8.0f);
+
+	mat4x4 worldMat;
+	worldMat = worldMat.identity ();
+	worldMat = matRotZ * matRotX;
+	worldMat = worldMat * transMat;
 
 	std::vector<triangle> trianglesToRasterize;
 
 	// Draw Triangles
 
 	for (auto tri : meshCube.tris) {
-		triangle projectedTriangle, translatedTriangle, rotatedZTriangle, rotatedZXTriangle;
+		triangle projectedTriangle, transformedTriangle;
 
-		// Project Z Matrix Rotation
-		multiplyMatrixProjections (tri.p[0], rotatedZTriangle.p[0], matRotZ);
-		multiplyMatrixProjections (tri.p[1], rotatedZTriangle.p[1], matRotZ);
-		multiplyMatrixProjections (tri.p[2], rotatedZTriangle.p[2], matRotZ);
-		
-		// Project X Matrix Rotation
-		multiplyMatrixProjections (rotatedZTriangle.p[0], rotatedZXTriangle.p[0], matRotX);
-		multiplyMatrixProjections (rotatedZTriangle.p[1], rotatedZXTriangle.p[1], matRotX);
-		multiplyMatrixProjections (rotatedZTriangle.p[2], rotatedZXTriangle.p[2], matRotX);
-
-		// Offset Triangle into the screen
-		translatedTriangle = rotatedZXTriangle;
-		translatedTriangle.p[0].z = rotatedZXTriangle.p[0].z + 8.0f;
-		translatedTriangle.p[1].z = rotatedZXTriangle.p[1].z + 8.0f;
-		translatedTriangle.p[2].z = rotatedZXTriangle.p[2].z + 8.0f;
+		transformedTriangle.p[0] = tri.p[0].project (worldMat);
+		transformedTriangle.p[1] = tri.p[1].project (worldMat);
+		transformedTriangle.p[2] = tri.p[2].project (worldMat);
 
 		// Use Cross-Product to get surface normal
 		vec3d normal, line1, line2;
-		line1.x = translatedTriangle.p[1].x - translatedTriangle.p[0].x;
-		line1.y = translatedTriangle.p[1].y - translatedTriangle.p[0].y;
-		line1.z = translatedTriangle.p[1].z - translatedTriangle.p[0].z;
-
-		line2.x = translatedTriangle.p[2].x - translatedTriangle.p[0].x;
-		line2.y = translatedTriangle.p[2].y - translatedTriangle.p[0].y;
-		line2.z = translatedTriangle.p[2].z - translatedTriangle.p[0].z;
-
-		normal.x = line1.y * line2.z - line1.z * line2.y;
-		normal.y = line1.z * line2.x - line1.x * line2.z;
-		normal.z = line1.x * line2.y - line1.y * line2.x;
-
-		// It's normally normal to normalise the normal
-		float lnL = sqrt (normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
-		if (lnL != 0.0f) {
-			normal.x /= lnL; 
-			normal.y /= lnL; 
-			normal.z /= lnL;
-		}
-
-		float dpN = ((normal.x * (translatedTriangle.p[0].x - vCamera.x)) +
-					(normal.y * (translatedTriangle.p[0].y - vCamera.y)) +
-					(normal.z * (translatedTriangle.p[0].z - vCamera.z)));
 		
-		if (dpN < 0.0f) {
+		// Get lines of either side of triangle
+		line1 = transformedTriangle.p[1] - transformedTriangle.p[0];
+		line2 = transformedTriangle.p[2] - transformedTriangle.p[0];
+
+		// Take cross product of lines to get normal to triangle surface
+		normal = line1.crossProduct (line2);
+
+		// Normalize the normal
+		normal = normal.normalize ();
+
+		// Get ray from triangle to camera
+		vec3d vCameraRay = transformedTriangle.p[0] - vCamera;
+		
+		if (normal.dotProduct(vCameraRay) < 0.0f) {
 
 			// Illumination
 			vec3d light_direction = {0.0f, 0.0f, -1.0f};
-			float ldL = (light_direction.x * light_direction.x + light_direction.y * light_direction.y + light_direction.z * light_direction.z);
-			if (ldL != 0.0f) {
-				light_direction.x /= ldL;
-				light_direction.y /= ldL;
-				light_direction.z /= ldL;
-			}
+			light_direction = light_direction.normalize ();
 
-			float dpLD = ((normal.x * light_direction.x) +
-						  (normal.y * light_direction.y) +
-						  (normal.z * light_direction.z));
+			// Alignment of light to triangle surface
+			float dpLD = std::max (0.1f, light_direction.dotProduct (normal));
 
-			translatedTriangle.col = GetColour (dpLD);
+			transformedTriangle.col = GetColour (dpLD);
 
 			// Project triangles from 3D --> 2D
-			multiplyMatrixProjections (translatedTriangle.p[0], projectedTriangle.p[0], projMat);
-			multiplyMatrixProjections (translatedTriangle.p[1], projectedTriangle.p[1], projMat);
-			multiplyMatrixProjections (translatedTriangle.p[2], projectedTriangle.p[2], projMat);
-			projectedTriangle.col = translatedTriangle.col;
+			projectedTriangle.p[0] = transformedTriangle.p[0].project(projMat);
+			projectedTriangle.p[1] = transformedTriangle.p[1].project (projMat);
+			projectedTriangle.p[2] = transformedTriangle.p[2].project (projMat);
+			projectedTriangle.col = transformedTriangle.col;
 
+			// Normalize points
+			projectedTriangle.p[0] = projectedTriangle.p[0] / projectedTriangle.p[0].w;
+			projectedTriangle.p[1] = projectedTriangle.p[1] / projectedTriangle.p[1].w;
+			projectedTriangle.p[2] = projectedTriangle.p[2] / projectedTriangle.p[2].w;
 
-			// Scale into view
-			projectedTriangle.p[0].x += 1.0f; 
-			projectedTriangle.p[0].y += 1.0f;
-			projectedTriangle.p[1].x += 1.0f; 
-			projectedTriangle.p[1].y += 1.0f;
-			projectedTriangle.p[2].x += 1.0f; 
-			projectedTriangle.p[2].y += 1.0f;
+			// Offset vertices into normalized screen space
+			vec3d vOffsetView = {1, 1, 0};
+			projectedTriangle.p[0] = projectedTriangle.p[0] + vOffsetView;
+			projectedTriangle.p[1] = projectedTriangle.p[1] + vOffsetView;
+			projectedTriangle.p[2] = projectedTriangle.p[2] + vOffsetView;
 			projectedTriangle.p[0].x *= 0.5f * (float) ScreenWidth ();
 			projectedTriangle.p[0].y *= 0.5f * (float) ScreenHeight ();
 			projectedTriangle.p[1].x *= 0.5f * (float) ScreenWidth ();
@@ -187,9 +148,9 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	for (auto &projectedTriangle : trianglesToRasterize) {
 		// Drawing the triangles using a 2D Matrix , to create a 3D illusion of an object on the screen
 		FillTriangle (projectedTriangle.p[0].x, projectedTriangle.p[0].y,
-			projectedTriangle.p[1].x, projectedTriangle.p[1].y,
-			projectedTriangle.p[2].x, projectedTriangle.p[2].y,
-			projectedTriangle.col);
+					  projectedTriangle.p[1].x, projectedTriangle.p[1].y,
+					  projectedTriangle.p[2].x, projectedTriangle.p[2].y,
+					  projectedTriangle.col);
 
 		// Wire Frame for Debugging
 		/*DrawTriangle (projectedTriangle.p[0].x, projectedTriangle.p[0].y,
@@ -201,15 +162,123 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	return true;
 }
 
-void Engine3D::multiplyMatrixProjections (vec3d &input, vec3d &output, mat4x4 &m) {
-	output.x = input.x * m.mat[0][0] + input.y * m.mat[1][0] + input.z * m.mat[2][0] + m.mat[3][0];
-	output.y = input.x * m.mat[0][1] + input.y * m.mat[1][1] + input.z * m.mat[2][1] + m.mat[3][1];
-	output.z = input.x * m.mat[0][2] + input.y * m.mat[1][2] + input.z * m.mat[2][2] + m.mat[3][2];
-	float w = input.x * m.mat[0][3] + input.y * m.mat[1][3] + input.z * m.mat[2][3] + m.mat[3][3];
+Engine3D::vec3d Engine3D::vec3d::operator+ (vec3d &vec) {
+	return {this->x + vec.x, this->y + vec.y, this->z + vec.z};
+}
 
-	if (w != 0.0f) {
-		output.x /= w;
-		output.y /= w;
-		output.z /= w;
-	}
+Engine3D::vec3d Engine3D::vec3d::operator- (vec3d &vec) {
+	return {this->x - vec.x, this->y - vec.y, this->z - vec.z};
+}
+
+Engine3D::vec3d Engine3D::vec3d::operator* (float k) {
+	return {this->x * k, this->y * k, this->z * k};
+}
+
+Engine3D::vec3d Engine3D::vec3d::operator/ (float k) {
+	return {this->x / k, this->y / k, this->z / k};
+}
+
+float Engine3D::vec3d::dotProduct (vec3d &vec) {
+	return this->x * vec.x + this->y * vec.y + this->z * vec.z;
+}
+
+float Engine3D::vec3d::len () {
+	return sqrtf (this->dotProduct (*this));
+}
+
+Engine3D::vec3d Engine3D::vec3d::normalize () {
+	float l = this->len ();
+	return {this->x / l, this->y / l, this->z / l};
+}
+
+Engine3D::vec3d Engine3D::vec3d::crossProduct (vec3d &vec) {
+	vec3d v;
+	v.x = this->y * vec.z - this->z * vec.y;
+	v.y = this->z * vec.x - this->x * vec.z;
+	v.z = this->x * vec.y - this->y * vec.x;
+	return v;
+}
+
+Engine3D::vec3d Engine3D::vec3d::project (mat4x4 &mat) {
+	vec3d v;
+	v.x = this->x * mat.mat[0][0] + this->y * mat.mat[1][0] + this->z * mat.mat[2][0] + this->w * mat.mat[3][0];
+	v.y = this->x * mat.mat[0][1] + this->y * mat.mat[1][1] + this->z * mat.mat[2][1] + this->w * mat.mat[3][1];
+	v.z = this->x * mat.mat[0][2] + this->y * mat.mat[1][2] + this->z * mat.mat[2][2] + this->w * mat.mat[3][2];
+	v.w = this->x * mat.mat[0][3] + this->y * mat.mat[1][3] + this->z * mat.mat[2][3] + this->w * mat.mat[3][3];
+	return v;
+}
+
+Engine3D::mat4x4 Engine3D::mat4x4::identity () {
+	mat4x4 mat;
+	mat.mat[0][0] = 1.0f;
+	mat.mat[1][1] = 1.0f;
+	mat.mat[2][2] = 1.0f;
+	mat.mat[3][3] = 1.0f;
+	return mat;
+}
+
+Engine3D::mat4x4 Engine3D::mat4x4::rotateX (float fAngleRad) {
+	mat4x4 mat;
+	mat.mat[0][0] = 1.0f;
+	mat.mat[1][1] = cosf (fAngleRad);
+	mat.mat[1][2] = sinf (fAngleRad);
+	mat.mat[2][1] = -sinf (fAngleRad);
+	mat.mat[2][2] = cosf (fAngleRad);
+	mat.mat[3][3] = 1.0f;
+	return mat;
+}
+
+Engine3D::mat4x4 Engine3D::mat4x4::rotateY (float fAngleRad) {
+	mat4x4 mat;
+	mat.mat[0][0] = cosf (fAngleRad);
+	mat.mat[0][2] = sinf (fAngleRad);
+	mat.mat[2][0] = -sinf (fAngleRad);
+	mat.mat[1][1] = 1.0f;
+	mat.mat[2][2] = cosf (fAngleRad);
+	mat.mat[3][3] = 1.0f;
+	return mat;
+}
+
+Engine3D::mat4x4 Engine3D::mat4x4::rotateZ (float fAngleRad) {
+	mat4x4 mat;
+	mat.mat[0][0] = cosf (fAngleRad);
+	mat.mat[0][1] = sinf (fAngleRad);
+	mat.mat[1][0] = -sinf (fAngleRad);
+	mat.mat[1][1] = cosf (fAngleRad);
+	mat.mat[2][2] = 1.0f;
+	mat.mat[3][3] = 1.0f;
+	return mat;
+}
+
+Engine3D::mat4x4 Engine3D::mat4x4::translate (float x, float y, float z) {
+	mat4x4 mat;
+	mat.mat[0][0] = 1.0f;
+	mat.mat[1][1] = 1.0f;
+	mat.mat[2][2] = 1.0f;
+	mat.mat[3][3] = 1.0f;
+	mat.mat[3][0] = x;
+	mat.mat[3][1] = y;
+	mat.mat[3][2] = z;
+	return mat;
+}
+
+Engine3D::mat4x4 Engine3D::mat4x4::project (float fFovDegrees, float fAspectRatio, float fNear, float fFar) {
+	float fFovRad = 1.0f / tanf (fFovDegrees * 0.5f / 180.0f * 3.14159f);
+	mat4x4 mat;
+	mat.mat[0][0] = fAspectRatio * fFovRad;
+	mat.mat[1][1] = fFovRad;
+	mat.mat[2][2] = fFar / (fFar - fNear);
+	mat.mat[3][2] = (-fFar * fNear) / (fFar - fNear);
+	mat.mat[2][3] = 1.0f;
+	mat.mat[3][3] = 0.0f;
+	return mat;
+}
+
+Engine3D::mat4x4 Engine3D::mat4x4::operator* (mat4x4 &mat) {
+	mat4x4 matrix;
+	for (int c = 0; c < 4; c++)
+		for (int r = 0; r < 4; r++)
+			matrix.mat[r][c] = this->mat[r][0] * mat.mat[0][c] + this->mat[r][1] * 
+			mat.mat[1][c] + this->mat[r][2] * mat.mat[2][c] + this->mat[r][3] * mat.mat[3][c];
+	return matrix;
 }
