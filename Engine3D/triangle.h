@@ -10,7 +10,7 @@ public:
 	Triangle ();
 	Triangle (Vec3D &vec1, Vec3D &vec2, Vec3D &vec3);
 
-	void setColor (olc::Pixel col);
+	void setColor (olc::Pixel newCol);
 	olc::Pixel getColor ();
 
 	Vec3D getP (int index);

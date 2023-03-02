@@ -39,10 +39,10 @@ bool Engine3D::OnUserCreate () {
 
 	//	};
 
-	meshCube.loadFromObjectFile ("axis.obj");
+	meshCube = Mesh ("axis.obj");
 
 	// Projection Matrix
-	projMat = projMat.project (90.0f, (float) ScreenHeight () / (float) ScreenWidth (), 0.1f, 1000.0f);
+	projMat.project (90.0f, (float) ScreenHeight () / (float) ScreenWidth (), 0.1f, 1000.0f);
 
 	return true;
 }
@@ -54,19 +54,19 @@ olc::Pixel GetColour (float lum) {
 
 bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	if (GetKey (olc::UP).bHeld) {
-		vCamera.setY (vCamera.getY () + (8.0f * fElapsedTime));
+		vCamera.setY (vCamera.getY () + (80.0f * fElapsedTime));
 	}
 
 	if (GetKey (olc::DOWN).bHeld) {
-		vCamera.setY (vCamera.getY () - (8.0f * fElapsedTime));
+		vCamera.setY (vCamera.getY () - (80.0f * fElapsedTime));
 	}
 
 	if (GetKey (olc::RIGHT).bHeld) {
-		vCamera.setX (vCamera.getX () + (8.0f * fElapsedTime));
+		vCamera.setX (vCamera.getX () + (80.0f * fElapsedTime));
 	}
 
 	if (GetKey (olc::LEFT).bHeld) {
-		vCamera.setX (vCamera.getX () - (8.0f * fElapsedTime));
+		vCamera.setX (vCamera.getX () - (80.0f * fElapsedTime));
 	}
 
 	FillRect (0, 0, ScreenWidth (), ScreenHeight (), olc::BLACK);
@@ -84,14 +84,15 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	transMat = transMat.translate (0.0f, 0.0f, 16.0f);
 
 	Mat4x4 worldMat;
-	worldMat = worldMat.identity ();
+	worldMat.identity ();
 	worldMat = matRotZ * matRotX;
 	worldMat = worldMat * transMat;
 
-	vLookDirection = {0, 0, 1};
 	Vec3D vUp = {0, 1, 0};
-	Vec3D vTarget = vCamera + vLookDirection;
-
+	Vec3D vTarget = {0, 0, 1};
+	Mat4x4 cameraRotMat = cameraRotMat.rotateY (fYaw);
+	vLookDirection = vTarget.project(cameraRotMat);
+	vTarget = vCamera + vLookDirection;
 	Mat4x4 cameraMatrix = pointAt (vCamera, vTarget, vUp);
 
 	// Make view matrix from camera
@@ -106,8 +107,8 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 		Triangle projectedTriangle, transformedTriangle, viewedTriangle;
 
 		transformedTriangle.setP (0, tri.getP (0).project (worldMat));
-		transformedTriangle.setP (0, tri.getP (1).project (worldMat));
-		transformedTriangle.setP (0, tri.getP (2).project (worldMat));
+		transformedTriangle.setP (1, tri.getP (1).project (worldMat));
+		transformedTriangle.setP (2, tri.getP (2).project (worldMat));
 
 		// Use Cross-Product to get surface normal
 		Vec3D normal, line1, line2;
@@ -120,7 +121,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 		normal = line1.crossProduct (line2);
 
 		// Normalize the normal
-		normal = normal.normalize ();
+		normal.normalize ();
 
 		// Get ray from triangle to camera
 		Vec3D vCameraRay = transformedTriangle.getP (0) - vCamera;
@@ -128,8 +129,8 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 		if (normal.dotProduct(vCameraRay) < 0.0f) {
 
 			// Illumination
-			Vec3D light_direction = {0.0f, 0.0f, -1.0f};
-			light_direction = light_direction.normalize ();
+			Vec3D light_direction = {0.0f, 1.0f, -1.0f};
+			light_direction.normalize ();
 
 			// Alignment of light to triangle surface
 			float dpLD = std::max (0.1f, light_direction.dotProduct (normal));
@@ -152,6 +153,14 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 			projectedTriangle.setP (0, projectedTriangle.getP (0) / projectedTriangle.getP (0).getW ());
 			projectedTriangle.setP (1, projectedTriangle.getP (1) / projectedTriangle.getP (1).getW ());
 			projectedTriangle.setP (2, projectedTriangle.getP (2) / projectedTriangle.getP (2).getW ());
+
+			// X/Y are inverted so put them back
+			projectedTriangle.getP (0).setX (projectedTriangle.getP (0).getX () * -1.0f);
+			projectedTriangle.getP (1).setX (projectedTriangle.getP (1).getX () * -1.0f);
+			projectedTriangle.getP (2).setX (projectedTriangle.getP (2).getX () * -1.0f);
+			projectedTriangle.getP (0).setY (projectedTriangle.getP (0).getY () * -1.0f);
+			projectedTriangle.getP (1).setY (projectedTriangle.getP (1).getY () * -1.0f);
+			projectedTriangle.getP (2).setY (projectedTriangle.getP (2).getY () * -1.0f);
 
 			// Offset vertices into normalized screen space
 			Vec3D vOffsetView = {1, 1, 0};
@@ -184,10 +193,10 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 			projectedTriangle.getColor ());
 
 		// Wire Frame for Debugging
-		DrawTriangle (projectedTriangle.getP (0).getX (), projectedTriangle.getP (0).getY (),
-			projectedTriangle.getP (1).getX (), projectedTriangle.getP (1).getY (),
-			projectedTriangle.getP (2).getX (), projectedTriangle.getP (2).getY (),
-			olc::WHITE);
+		//DrawTriangle (projectedTriangle.getP (0).getX (), projectedTriangle.getP (0).getY (),
+		//	projectedTriangle.getP (1).getX (), projectedTriangle.getP (1).getY (),
+		//	projectedTriangle.getP (2).getX (), projectedTriangle.getP (2).getY (),
+		//	olc::WHITE);
 	}
 
 	return true;
@@ -196,12 +205,12 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 Mat4x4 Engine3D::pointAt (Vec3D &pos, Vec3D &target, Vec3D &up) {
 	// Calculate new forward direction
 	Vec3D newForward = target - pos;
-	newForward = newForward.normalize ();
+	newForward.normalize ();
 
 	// Calculate new up direction
-	Vec3D a = newForward * up.dotProduct (newForward);
+	Vec3D a = newForward * (up.dotProduct (newForward));
 	Vec3D newUp = up - a;
-	newUp = newUp.normalize ();
+	newUp.normalize ();
 
 	// Calculate new right direction
 	Vec3D newRight = newUp.crossProduct (newForward);

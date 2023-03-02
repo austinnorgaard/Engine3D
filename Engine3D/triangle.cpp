@@ -9,8 +9,8 @@ Triangle::Triangle (Vec3D &vec1, Vec3D &vec2, Vec3D &vec3) {
 	p[2] = vec3;
 }
 
-void Triangle::setColor (olc::Pixel col) {
-	this->col = col;
+void Triangle::setColor (olc::Pixel newCol) {
+	col = newCol;
 }
 
 olc::Pixel Triangle::getColor () {

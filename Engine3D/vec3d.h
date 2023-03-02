@@ -16,7 +16,7 @@ public:
 	Vec3D operator/ (float k);
 	friend std::istream &operator>> (std::istream &input, Vec3D &vec);
 
-	float dotProduct (Vec3D &vec);
+	float dotProduct (Vec3D vec);
 	float len ();
 
 	Vec3D normalize ();

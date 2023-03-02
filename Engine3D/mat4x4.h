@@ -22,5 +22,5 @@ public:
 	void setMat (int index1, int index2, float newValue);
 
 private:
-	float mat[4][4];
+	float mat[4][4] = {0};
 };
