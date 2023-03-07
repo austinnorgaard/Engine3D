@@ -12,8 +12,8 @@ public:
 	static Mat4x4 rotateX (float fAngleRad);
 	static Mat4x4 rotateY (float fAngleRad);
 	static Mat4x4 rotateZ (float fAngleRad);
-	Mat4x4 translate (float x, float y, float z) const;
-	static Mat4x4 project (float fFovDegrees, float fAspectRatio, float fNear, float fFar);
+	static Mat4x4 translate (float x, float y, float z);
+	Mat4x4 project (float fFovDegrees, float fAspectRatio, float fNear, float fFar);
 	static Mat4x4 inverse (Mat4x4 &matrix2);
 	extern friend Mat4x4 operator* (Mat4x4 &mat1, Mat4x4 &mat2);
 

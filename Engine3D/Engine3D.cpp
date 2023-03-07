@@ -40,7 +40,7 @@ bool Engine3D::OnUserCreate () {
 	//	};
 
 	// Projection Matrix
-	projMat = Mat4x4::project (90.0f, (float) ScreenHeight () / (float) ScreenWidth (), 0.1f, 1000.0f);
+	projMat = projMat.project (90.0f, (float) ScreenHeight () / (float) ScreenWidth (), 0.1f, 1000.0f);
 
 	return true;
 }
@@ -96,7 +96,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	matRotX = Mat4x4::rotateX (fTheta);
 
 	Mat4x4 transMat;
-	transMat = projMat.translate (0.0f, 0.0f, 5.0f);
+	transMat = Mat4x4::translate (0.0f, 0.0f, 5.0f);
 
 	Mat4x4 worldMat;
 	worldMat = Mat4x4::identity ();
@@ -176,24 +176,18 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 				projectedTriangle.setP (2, projectedTriangle.getP (2) / projectedTriangle.getP (2).getW ());
 
 				// X/Y are inverted so put them back
-				projectedTriangle.getP (0).setX (projectedTriangle.getP (0).getX () * -1.0f);
-				projectedTriangle.getP (1).setX (projectedTriangle.getP (1).getX () * -1.0f);
-				projectedTriangle.getP (2).setX (projectedTriangle.getP (2).getX () * -1.0f);
-				projectedTriangle.getP (0).setY (projectedTriangle.getP (0).getY () * -1.0f);
-				projectedTriangle.getP (1).setY (projectedTriangle.getP (1).getY () * -1.0f);
-				projectedTriangle.getP (2).setY (projectedTriangle.getP (2).getY () * -1.0f);
+				projectedTriangle.setP (0, Vec3D (projectedTriangle.getP (0).getX () * -1.0f, projectedTriangle.getP (0).getY () * -1.0f, projectedTriangle.getP (0).getZ ()));
+				projectedTriangle.setP (1, Vec3D (projectedTriangle.getP (1).getX () * -1.0f, projectedTriangle.getP (1).getY () * -1.0f, projectedTriangle.getP (1).getZ ()));
+				projectedTriangle.setP (2, Vec3D (projectedTriangle.getP (2).getX () * -1.0f, projectedTriangle.getP (2).getY () * -1.0f, projectedTriangle.getP (2).getZ ()));
 
 				// Offset vertices into normalized screen space
 				Vec3D vOffsetView = {1, 1, 0};
 				projectedTriangle.setP (0, projectedTriangle.getP (0) + vOffsetView);
 				projectedTriangle.setP (1, projectedTriangle.getP (1) + vOffsetView);
 				projectedTriangle.setP (2, projectedTriangle.getP (2) + vOffsetView);
-				projectedTriangle.getP (0).setX (projectedTriangle.getP (0).getX () * (0.5f * (float) ScreenWidth ()));
-				projectedTriangle.getP (0).setY (projectedTriangle.getP (0).getY () * (0.5f * (float) ScreenHeight ()));
-				projectedTriangle.getP (1).setX (projectedTriangle.getP (1).getX () * (0.5f * (float) ScreenWidth ()));
-				projectedTriangle.getP (1).setY (projectedTriangle.getP (1).getY () * (0.5f * (float) ScreenHeight ()));
-				projectedTriangle.getP (2).setX (projectedTriangle.getP (2).getX () * (0.5f * (float) ScreenWidth ()));
-				projectedTriangle.getP (2).setY (projectedTriangle.getP (2).getY () * (0.5f * (float) ScreenHeight ()));
+				projectedTriangle.setP (0, Vec3D (projectedTriangle.getP (0).getX () * (0.5f * (float) ScreenWidth ()), projectedTriangle.getP (0).getY () * (0.5f * (float) ScreenHeight ()), projectedTriangle.getP (0).getZ ()));
+				projectedTriangle.setP (1, Vec3D (projectedTriangle.getP (1).getX () * (0.5f * (float) ScreenWidth ()), projectedTriangle.getP (1).getY () * (0.5f * (float) ScreenHeight ()), projectedTriangle.getP (1).getZ ()));
+				projectedTriangle.setP (2, Vec3D (projectedTriangle.getP (2).getX () * (0.5f * (float) ScreenWidth ()), projectedTriangle.getP (2).getY () * (0.5f * (float) ScreenHeight ()), projectedTriangle.getP (2).getZ ()));
 
 				trianglesToRasterize.push_back (projectedTriangle);
 			}
@@ -264,7 +258,6 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 			t.getP (2).getX (), t.getP (2).getY (),
 			olc::WHITE);*/
 		}
-
 		
 	}
 
@@ -376,10 +369,10 @@ int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, 
 		// the plane, the triangle simply becomes a smaller triangle
 
 		// Copy appearance info to new triangle
-		out_tri1.getColor () = in_tri.getColor ();
+		out_tri1.setColor (in_tri.getColor ());
 
 		// The inside point is valid, so keep that...
-		out_tri1.getP (0) = inside_points[0];
+		out_tri1.setP (0, inside_points[0]);
 
 		// but the two new points are at the locations where the 
 		// original sides of the triangle (lines) intersect with the plane
@@ -395,9 +388,9 @@ int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, 
 		// represent a quad with two new triangles
 
 		// Copy appearance info to new triangles
-		out_tri1.getColor () = in_tri.getColor ();
+		out_tri1.setColor (in_tri.getColor ());
 
-		out_tri2.getColor () = in_tri.getColor ();
+		out_tri2.setColor (in_tri.getColor ());
 
 		// The first triangle consists of the two inside points and a new
 		// point determined by the location where one side of the triangle

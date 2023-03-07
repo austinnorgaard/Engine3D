@@ -28,10 +28,10 @@ Vec3D Vec3D::operator* (float k) const {
 
 Vec3D operator* (const Vec3D &vec, const Mat4x4 &mat) {
 	Vec3D v;
-	v.setX (vec.getX () * mat.getMat (0, 0) + vec.getY () * mat.getMat (1, 0) + vec.getZ () * mat.getMat (2, 0) + vec.getW () * mat.getMat (3, 0));
-	v.setY (vec.getX () * mat.getMat (0, 1) + vec.getY () * mat.getMat (1, 1) + vec.getZ () * mat.getMat (2, 1) + vec.getW () * mat.getMat (3, 1));
-	v.setZ (vec.getX () * mat.getMat (0, 2) + vec.getY () * mat.getMat (1, 2) + vec.getZ () * mat.getMat (2, 2) + vec.getW () * mat.getMat (3, 2));
-	v.setW (vec.getX () * mat.getMat (0, 3) + vec.getY () * mat.getMat (1, 3) + vec.getZ () * mat.getMat (2, 3) + vec.getW () * mat.getMat (3, 3));
+	v.x = vec.x * mat.getMat(0, 0) + vec.y * mat.getMat(1, 0) + vec.z * mat.getMat(2, 0) + vec.w * mat.getMat(3, 0);
+	v.y = vec.x * mat.getMat(0, 1) + vec.y * mat.getMat(1, 1) + vec.z * mat.getMat(2, 1) + vec.w * mat.getMat(3, 1);
+	v.z = vec.x * mat.getMat(0, 2) + vec.y * mat.getMat(1, 2) + vec.z * mat.getMat(2, 2) + vec.w * mat.getMat(3, 2);
+	v.w = vec.x * mat.getMat(0, 3) + vec.y * mat.getMat(1, 3) + vec.z * mat.getMat(2, 3) + vec.w * mat.getMat(3, 3);
 	return v;
 }
 

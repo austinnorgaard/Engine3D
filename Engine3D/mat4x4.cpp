@@ -45,7 +45,7 @@ Mat4x4 Mat4x4::rotateZ (float fAngleRad) {
 	return m;
 }
 
-Mat4x4 Mat4x4::translate (float x, float y, float z) const {
+Mat4x4 Mat4x4::translate (float x, float y, float z) {
 	Mat4x4 m;
 	m.mat[0][0] = 1.0f;
 	m.mat[1][1] = 1.0f;
@@ -59,14 +59,13 @@ Mat4x4 Mat4x4::translate (float x, float y, float z) const {
 
 Mat4x4 Mat4x4::project (float fFovDegrees, float fAspectRatio, float fNear, float fFar) {
 	float fFovRad = 1.0f / tanf (fFovDegrees * 0.5f / 180.0f * 3.14159f);
-	Mat4x4 m;
-	m.mat[0][0] = fAspectRatio * fFovRad;
-	m.mat[1][1] = fFovRad;
-	m.mat[2][2] = fFar / (fFar - fNear);
-	m.mat[3][2] = (( - 1.0f * fFar) * fNear) / (fFar - fNear);
-	m.mat[2][3] = 1.0f;
-	m.mat[3][3] = 0.0f;
-	return m;
+	mat[0][0] = fAspectRatio * fFovRad;
+	mat[1][1] = fFovRad;
+	mat[2][2] = fFar / (fFar - fNear);
+	mat[3][2] = (( - 1.0f * fFar) * fNear) / (fFar - fNear);
+	mat[2][3] = 1.0f;
+	mat[3][3] = 0.0f;
+	return *this;
 }
 
 Mat4x4 operator* (Mat4x4 &mat1, Mat4x4 &mat2) {
