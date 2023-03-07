@@ -14,32 +14,30 @@ Vec3D::Vec3D (float newX, float newY, float newZ) {
 	w = 1.0f;
 }
 
-Vec3D Vec3D::operator+ (Vec3D vec) {
-	x += vec.x;
-	y += vec.y;
-	z += vec.z;
-	return *this;
+Vec3D Vec3D::operator+ (const Vec3D &vec) const {
+	return {x + vec.x, y + vec.y, z + vec.z};
 }
 
-Vec3D Vec3D::operator- (Vec3D vec) {
-	x -= vec.x;
-	y -= vec.y;
-	z -= vec.z;
-	return *this;
+Vec3D Vec3D::operator- (const Vec3D &vec) const {
+	return {x - vec.x, y - vec.y, z - vec.z};
 }
 
-Vec3D Vec3D::operator* (float k) {
-	x *= k;
-	y *= k;
-	z *= k;
-	return *this;
+Vec3D Vec3D::operator* (float k) const {
+	return {x * k, y * k, z * k};
 }
 
-Vec3D Vec3D::operator/ (float k) {
-	x /= k;
-	y /= k;
-	z /= k;
-	return *this;
+Vec3D operator* (const Vec3D &vec, const Mat4x4 &mat) {
+	Vec3D v;
+	v.setX (vec.getX () * mat.getMat (0, 0) + vec.getY () * mat.getMat (1, 0) + vec.getZ () * mat.getMat (2, 0) + vec.getW () * mat.getMat (3, 0));
+	v.setY (vec.getX () * mat.getMat (0, 1) + vec.getY () * mat.getMat (1, 1) + vec.getZ () * mat.getMat (2, 1) + vec.getW () * mat.getMat (3, 1));
+	v.setZ (vec.getX () * mat.getMat (0, 2) + vec.getY () * mat.getMat (1, 2) + vec.getZ () * mat.getMat (2, 2) + vec.getW () * mat.getMat (3, 2));
+	v.setW (vec.getX () * mat.getMat (0, 3) + vec.getY () * mat.getMat (1, 3) + vec.getZ () * mat.getMat (2, 3) + vec.getW () * mat.getMat (3, 3));
+	return v;
+}
+
+
+Vec3D Vec3D::operator/ (float k) const {
+	return {x / k, y / k, z / k};
 }
 
 std::istream &operator>> (std::istream &input, Vec3D &vec) {
@@ -47,35 +45,36 @@ std::istream &operator>> (std::istream &input, Vec3D &vec) {
 	return input;
 }
 
-float Vec3D::dotProduct (Vec3D vec) {
-	return (this->x * vec.x + this->y * vec.y + this->z * vec.z);
+float Vec3D::dotProduct (const Vec3D &vec1, const Vec3D &vec2) {
+	return vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z;
 }
 
-float Vec3D::len () {
-	return sqrtf (dotProduct (*this));
+float Vec3D::len (const Vec3D &vec) {
+	return sqrtf (dotProduct (vec, vec));
 }
 
-Vec3D Vec3D::normalize () {
-	float l = len ();
-	x /= l;
-	y /= l;
-	z /= l;
-	return *this;
+Vec3D Vec3D::normalize (const Vec3D &vec) {
+	float l = len(vec);
+	return {vec.x / l, vec.y / l, vec.z / l};
 }
 
-Vec3D Vec3D::crossProduct (Vec3D &vec) {
-	x = y * vec.z - z * vec.y;
-	y = z * vec.x - x * vec.z;
-	z = x * vec.y - y * vec.x;
-	return *this;
+Vec3D Vec3D::crossProduct (const Vec3D &vec1, const Vec3D &vec2) {
+	Vec3D vector;
+	vector.x = vec1.y * vec2.z - vec1.z * vec2.y;
+	vector.y = vec1.z * vec2.x - vec1.x * vec2.z;
+	vector.z = vec1.x * vec2.y - vec1.y * vec2.x;
+	return vector;
 }
 
-Vec3D Vec3D::project (Mat4x4 &mat) {
-	x = x * mat.getMat (0, 0) + y * mat.getMat (1, 0) + z * mat.getMat (2, 0) + w * mat.getMat (3, 0);
-	y = x * mat.getMat (0, 1) + y * mat.getMat (1, 1) + z * mat.getMat (2, 1) + w * mat.getMat (3, 1);
-	z = x * mat.getMat (0, 2) + y * mat.getMat (1, 2) + z * mat.getMat (2, 2) + w * mat.getMat (3, 2);
-	w = x * mat.getMat (0, 3) + y * mat.getMat (1, 3) + z * mat.getMat (2, 3) + w * mat.getMat (3, 3);
-	return *this;
+Vec3D Vec3D::intersectPlane (Vec3D &plane_p, Vec3D &plane_n, Vec3D &lineStart, Vec3D &lineEnd) {
+	plane_n = normalize(plane_n);
+	float plane_d = -1.0f * (dotProduct (plane_n, plane_p));
+	float ad = dotProduct (lineStart, plane_n);
+	float bd = dotProduct (lineEnd, plane_n);
+	float t = (-1.0f * plane_d - ad) / (bd - ad);
+	Vec3D lineStartToEnd = (lineEnd - lineStart);
+	Vec3D lineToIntersect = (lineStartToEnd * t);
+	return (lineStart + lineToIntersect);
 }
 
 void Vec3D::setX (float newX) {
@@ -94,18 +93,18 @@ void Vec3D::setW (float newW) {
 	w = newW;
 }
 
-float Vec3D::getX () {
+float Vec3D::getX () const {
 	return x;
 }
 
-float Vec3D::getY () {
+float Vec3D::getY () const {
 	return y;
 }
 
-float Vec3D::getZ () {
+float Vec3D::getZ () const {
 	return z;
 }
 
-float Vec3D::getW () {
+float Vec3D::getW () const {
 	return w;
 }

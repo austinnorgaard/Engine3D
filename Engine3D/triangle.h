@@ -8,12 +8,12 @@
 class Triangle {
 public:
 	Triangle ();
-	Triangle (Vec3D &vec1, Vec3D &vec2, Vec3D &vec3);
+	Triangle (Vec3D vec1, Vec3D vec2, Vec3D vec3);
 
 	void setColor (olc::Pixel newCol);
-	olc::Pixel getColor ();
+	olc::Pixel getColor () const;
 
-	Vec3D getP (int index);
+	Vec3D getP (int index) const;
 	void setP (int index, Vec3D vec);
 
 private:

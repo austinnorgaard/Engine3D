@@ -13,8 +13,9 @@ public:
 
 	bool loadFromObjectFile (std::string sFileName);
 
-	std::vector<Triangle> getTris ();
+	std::vector<Triangle> getTris () const;
 
 private:
 	std::vector<Triangle> tris;
+	std::vector<Vec3D> vertices;
 };

@@ -13,9 +13,7 @@ bool Mesh::loadFromObjectFile (std::string sFileName) {
 	if (!f.is_open ()) {
 		exit (EXIT_FAILURE);
 	}
-
-	// Local cache of vertices
-	std::vector<Vec3D> vertices;
+	
 
 	while (!f.eof ()) {
 		char line[128];
@@ -28,21 +26,20 @@ bool Mesh::loadFromObjectFile (std::string sFileName) {
 
 		if (line[0] == 'v') {
 			Vec3D v;
-			s >> unUsed >> v;
+			s >> unUsed >> v.x >> v.y >> v.z;
 			vertices.push_back (v);
 		}
 
 		if (line[0] == 'f') {
 			int f[3];
 			s >> unUsed >> f[0] >> f[1] >> f[2];
-			Triangle tri = Triangle (vertices[f[0] - 1], vertices[f[1] - 1], vertices[f[2] - 1]);
-			tris.push_back (tri);
+			tris.push_back ({vertices[f[0] - 1], vertices[f[1] - 1], vertices[f[2] - 1]});
 		}
 	}
 
 	return true;
 }
 
-std::vector<Triangle> Mesh::getTris () {
+std::vector<Triangle> Mesh::getTris () const {
 	return tris;
 }

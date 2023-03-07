@@ -10,29 +10,32 @@ public:
 	Vec3D ();
 	Vec3D (float newX, float newY, float newZ);
 
-	Vec3D operator+ (Vec3D vec);
-	Vec3D operator- (Vec3D vec);
-	Vec3D operator* (float k);
-	Vec3D operator/ (float k);
+	Vec3D operator+ (const Vec3D &vec) const;
+	Vec3D operator- (const Vec3D &vec) const;
+	Vec3D operator* (float k) const;
+	extern friend Vec3D operator* (const Vec3D &vec, const Mat4x4 &mat);
+	Vec3D operator/ (float k) const;
 	friend std::istream &operator>> (std::istream &input, Vec3D &vec);
 
-	float dotProduct (Vec3D vec);
-	float len ();
+	static float dotProduct (const Vec3D &vec1, const Vec3D &vec2);
+	static float len (const Vec3D &vec);
 
-	Vec3D normalize ();
-	Vec3D crossProduct (Vec3D &vec);
-	Vec3D project (Mat4x4 &mat);
+	static Vec3D normalize (const Vec3D &vec);
+	static Vec3D crossProduct (const Vec3D &vec1, const Vec3D &vec2);
+	static Vec3D intersectPlane (Vec3D &plane_p, Vec3D &plane_n, Vec3D &lineStart, Vec3D &lineEnd);
 
 	void setX (float newX);
 	void setY (float newY);
 	void setZ (float newZ);
 	void setW (float newW);
 
-	float getX ();
-	float getY ();
-	float getZ ();
-	float getW ();
+	float getX () const;
+	float getY () const;
+	float getZ () const;
+	float getW () const;
+
+	float x, y, z, w;
 
 private:
-	float x, y, z, w;
+	
 };
