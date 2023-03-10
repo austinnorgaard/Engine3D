@@ -24,7 +24,7 @@ public:
 	int clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, Triangle &out_tri1, Triangle &out_tri2);
 
 private:
-	Mesh meshCube = Mesh ("mountains.obj");
+	Mesh meshCube;
 	Mat4x4 projMat;
 	float fTheta;
 	Vec3D vCamera;

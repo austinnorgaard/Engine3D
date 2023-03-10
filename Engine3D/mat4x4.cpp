@@ -1,6 +1,12 @@
 #include "mat4x4.h"
 
 Mat4x4::Mat4x4 () {
+	size = 4;
+	for (int i = 0; i < 4; i++) {
+		for (int k = 0; k < 4; k++) {
+			mat[i][k] = 0;
+		}
+	}
 }
 
 Mat4x4 Mat4x4::identity () {
@@ -104,4 +110,8 @@ Mat4x4 Mat4x4::inverse (Mat4x4 &matrix2) {
 	matrix.mat[3][2] = -1.0f * (matrix2.mat[3][0] * matrix.mat[0][2] + matrix2.mat[3][1] * matrix.mat[1][2] + matrix2.mat[3][2] * matrix.mat[2][2]);
 	matrix.mat[3][3] = 1.0f;
 	return matrix;
+}
+
+int Mat4x4::getSize () const {
+	return size;
 }

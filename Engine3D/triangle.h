@@ -16,7 +16,12 @@ public:
 	Vec3D getP (int index) const;
 	void setP (int index, Vec3D vec);
 
+	int getSize () const;
+
 private:
 	olc::Pixel col;
 	Vec3D p[3];
+
+	// Number of Points
+	int size;
 };

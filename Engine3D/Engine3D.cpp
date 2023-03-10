@@ -39,6 +39,8 @@ bool Engine3D::OnUserCreate () {
 
 	//	};
 
+	meshCube = Mesh ("mountains.obj");
+
 	// Projection Matrix
 	projMat = projMat.project (90.0f, (float) ScreenHeight () / (float) ScreenWidth (), 0.1f, 1000.0f);
 
@@ -120,9 +122,10 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 
 	for (auto &tri : meshCube.getTris ()) {
 		Triangle projectedTriangle, transformedTriangle, viewedTriangle;
-		transformedTriangle.setP (0, (tri.getP (0) * worldMat));
-		transformedTriangle.setP (1, (tri.getP (1) * worldMat));
-		transformedTriangle.setP (2, (tri.getP (2) * worldMat));
+
+		for (int i = 0; i < transformedTriangle.getSize (); i++) {
+			transformedTriangle.setP (i, (tri.getP (i) * worldMat));
+		}
 
 		// Use Cross-Product to get surface normal
 		Vec3D normal, line1, line2;
@@ -152,9 +155,9 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 			transformedTriangle.setColor(GetColour (dpLD));
 
 			// Convert World Space --> View Space
-			viewedTriangle.setP (0, (transformedTriangle.getP (0) * viewMatrix));
-			viewedTriangle.setP (1, (transformedTriangle.getP (1) * viewMatrix));
-			viewedTriangle.setP (2, (transformedTriangle.getP (2) * viewMatrix));
+			for (int i = 0; i < viewedTriangle.getSize (); i++) {
+				viewedTriangle.setP (i, (transformedTriangle.getP (i) *viewMatrix));
+			}
 			viewedTriangle.setColor (transformedTriangle.getColor ());
 
 			// Clip Viewed Triangle against near plane, this could form two additional
@@ -162,32 +165,18 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 			int nClippedTriangles = 0;
 			Triangle clipped[2];
 			nClippedTriangles = clipAgainstPlane ({0.0f, 0.0f, 0.1f}, {0.0f, 0.0f, 1.0f}, viewedTriangle, clipped[0], clipped[1]);
+			Vec3D vOffsetView = {1, 1, 0};
 
 			for (int n = 0; n < nClippedTriangles; n++) {
 				// Project triangles from 3D --> 2D
-				projectedTriangle.setP (0, (clipped[n].getP (0) * projMat));
-				projectedTriangle.setP (1, (clipped[n].getP (1) * projMat));
-				projectedTriangle.setP (2, (clipped[n].getP (2) * projMat));
+				for (int i = 0; i < projectedTriangle.getSize (); i++) {
+					projectedTriangle.setP (i, (clipped[n].getP (i) * projMat));
+					projectedTriangle.setP (i, projectedTriangle.getP (i) / projectedTriangle.getP (i).getW ());
+					projectedTriangle.setP (i, Vec3D (projectedTriangle.getP (i).getX () * -1.0f, projectedTriangle.getP (i).getY () * -1.0f, projectedTriangle.getP (i).getZ ()));
+					projectedTriangle.setP (i, projectedTriangle.getP (i) + vOffsetView);
+					projectedTriangle.setP (i, Vec3D (projectedTriangle.getP (i).getX () *(0.5f * (float) ScreenWidth ()), projectedTriangle.getP (i).getY () *(0.5f * (float) ScreenHeight ()), projectedTriangle.getP (i).getZ ()));
+				}
 				projectedTriangle.setColor (clipped[n].getColor ());
-
-				// Normalize points
-				projectedTriangle.setP (0, projectedTriangle.getP (0) / projectedTriangle.getP (0).getW ());
-				projectedTriangle.setP (1, projectedTriangle.getP (1) / projectedTriangle.getP (1).getW ());
-				projectedTriangle.setP (2, projectedTriangle.getP (2) / projectedTriangle.getP (2).getW ());
-
-				// X/Y are inverted so put them back
-				projectedTriangle.setP (0, Vec3D (projectedTriangle.getP (0).getX () * -1.0f, projectedTriangle.getP (0).getY () * -1.0f, projectedTriangle.getP (0).getZ ()));
-				projectedTriangle.setP (1, Vec3D (projectedTriangle.getP (1).getX () * -1.0f, projectedTriangle.getP (1).getY () * -1.0f, projectedTriangle.getP (1).getZ ()));
-				projectedTriangle.setP (2, Vec3D (projectedTriangle.getP (2).getX () * -1.0f, projectedTriangle.getP (2).getY () * -1.0f, projectedTriangle.getP (2).getZ ()));
-
-				// Offset vertices into normalized screen space
-				Vec3D vOffsetView = {1, 1, 0};
-				projectedTriangle.setP (0, projectedTriangle.getP (0) + vOffsetView);
-				projectedTriangle.setP (1, projectedTriangle.getP (1) + vOffsetView);
-				projectedTriangle.setP (2, projectedTriangle.getP (2) + vOffsetView);
-				projectedTriangle.setP (0, Vec3D (projectedTriangle.getP (0).getX () * (0.5f * (float) ScreenWidth ()), projectedTriangle.getP (0).getY () * (0.5f * (float) ScreenHeight ()), projectedTriangle.getP (0).getZ ()));
-				projectedTriangle.setP (1, Vec3D (projectedTriangle.getP (1).getX () * (0.5f * (float) ScreenWidth ()), projectedTriangle.getP (1).getY () * (0.5f * (float) ScreenHeight ()), projectedTriangle.getP (1).getZ ()));
-				projectedTriangle.setP (2, Vec3D (projectedTriangle.getP (2).getX () * (0.5f * (float) ScreenWidth ()), projectedTriangle.getP (2).getY () * (0.5f * (float) ScreenHeight ()), projectedTriangle.getP (2).getZ ()));
 
 				trianglesToRasterize.push_back (projectedTriangle);
 			}
@@ -277,24 +266,26 @@ Mat4x4 Engine3D::pointAt (Vec3D &pos, Vec3D &target, Vec3D &up) const {
 	// Calculate new right direction
 	Vec3D newRight = Vec3D::crossProduct (newUp, newForward);
 
+	// Add Vec3D objects to vector to clean up code
+	std::vector<Vec3D *> pVecs;
+	pVecs.push_back (&newRight);
+	pVecs.push_back (&newUp);
+	pVecs.push_back (&newForward);
+	pVecs.push_back (&pos);
+
 	// Construct Dimensioning and Translation Matrix
 	Mat4x4 matrix;
 
-	matrix.setMat (0, 0, newRight.getX ());		
-	matrix.setMat (0, 1, newRight.getY ());		
-	matrix.setMat (0, 2, newRight.getZ ());		
-	matrix.setMat (0, 3, 0.0f);
-	matrix.setMat (1, 0, newUp.getX ());		
-	matrix.setMat (1, 1, newUp.getY ());		
-	matrix.setMat (1, 2, newUp.getZ ());		
-	matrix.setMat (1, 3, 0.0f);
-	matrix.setMat (2, 0, newForward.getX ());	
-	matrix.setMat (2, 1, newForward.getY ());	
-	matrix.setMat (2, 2, newForward.getZ ());	
-	matrix.setMat (2, 3, 0.0f);
-	matrix.setMat (3, 0, pos.getX ());			
-	matrix.setMat (3, 1, pos.getY ());			
-	matrix.setMat (3, 2, pos.getZ ());			
+	int index = 0;
+
+	for (auto vec : pVecs) {
+		matrix.setMat (index, 0, vec->getX ());
+		matrix.setMat (index, 1, vec->getY ());
+		matrix.setMat (index, 2, vec->getZ ());
+		matrix.setMat (index, 3, 0.0f);
+		index++;
+	}
+
 	matrix.setMat (3, 3, 1.0f);
 
 	return matrix;
@@ -303,6 +294,9 @@ Mat4x4 Engine3D::pointAt (Vec3D &pos, Vec3D &target, Vec3D &up) const {
 int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, Triangle &out_tri1, Triangle &out_tri2) {
 	// Make sure plane normal is indeed normal
 	plane_n = Vec3D::normalize (plane_n);
+
+	// Return case instead of multiple returns
+	int returnCase = 0;
 
 	// Return signed shortest distance from point to plane, plane normal must be normalised
 	auto dist = [&](Vec3D &p) {
@@ -353,18 +347,18 @@ int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, 
 		// All points lie on the outside of plane, so clip whole triangle
 		// It ceases to exist
 
-		return 0; // No returned triangles are valid
+		returnCase = 0; // No returned triangles are valid
 	}
 
-	if (nInsidePointCount == 3) {
+	else if (nInsidePointCount == 3) {
 		// All points lie on the inside of plane, so do nothing
 		// and allow the triangle to simply pass through
 		out_tri1 = in_tri;
 
-		return 1; // Just the one returned original triangle is valid
+		returnCase = 1; // Just the one returned original triangle is valid
 	}
 
-	if (nInsidePointCount == 1 && nOutsidePointCount == 2) {
+	else if (nInsidePointCount == 1 && nOutsidePointCount == 2) {
 		// Triangle should be clipped. As two points lie outside
 		// the plane, the triangle simply becomes a smaller triangle
 
@@ -379,10 +373,10 @@ int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, 
 		out_tri1.setP (1, Vec3D::intersectPlane (plane_p, plane_n, inside_points[0], outside_points[0]));
 		out_tri1.setP (2, Vec3D::intersectPlane (plane_p, plane_n, inside_points[0], outside_points[1]));
 
-		return 1; // Return the newly formed single triangle
+		returnCase = 1; // Return the newly formed single triangle
 	}
 
-	if (nInsidePointCount == 2 && nOutsidePointCount == 1) {
+	else if (nInsidePointCount == 2 && nOutsidePointCount == 1) {
 		// Triangle should be clipped. As two points lie inside the plane,
 		// the clipped triangle becomes a "quad". Fortunately, we can
 		// represent a quad with two new triangles
@@ -406,6 +400,8 @@ int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, 
 		out_tri2.setP (1, out_tri1.getP (2));
 		out_tri2.setP (2, Vec3D::intersectPlane (plane_p, plane_n, inside_points[1], outside_points[0]));
 
-		return 2; // Return two newly formed triangles which form a quad
+		returnCase = 2; // Return two newly formed triangles which form a quad
 	}
+
+	return returnCase;
 }

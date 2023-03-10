@@ -34,8 +34,7 @@ public:
 	float getZ () const;
 	float getW () const;
 
-	float x, y, z, w;
-
 private:
+	float x, y, z, w;
 	
 };

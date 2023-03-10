@@ -26,7 +26,7 @@ bool Mesh::loadFromObjectFile (std::string sFileName) {
 
 		if (line[0] == 'v') {
 			Vec3D v;
-			s >> unUsed >> v.x >> v.y >> v.z;
+			s >> unUsed >> v;
 			vertices.push_back (v);
 		}
 
