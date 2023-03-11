@@ -27,6 +27,10 @@ TexturedTriangle::TexturedTriangle (Vec2D vec1, Vec2D vec2, Vec2D vec3) {
 TexturedTriangle::TexturedTriangle (Vec3D vec1, Vec3D vec2, Vec3D vec3) : Triangle (vec1, vec2, vec3) {
 }
 
+TexturedTriangle::TexturedTriangle (Vec3D vec1, Vec3D vec2, Vec3D vec3, Vec2D vec4, Vec2D vec5, Vec2D vec6) : Triangle (vec1, vec2, vec3) {
+	TexturedTriangle (vec4, vec5, vec6);
+}
+
 void TexturedTriangle::setT (int index, Vec2D vec) {
 	t[index] = vec;
 }

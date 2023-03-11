@@ -12,11 +12,12 @@ public:
 	Mesh ();
 	Mesh (std::string sFileName);
 
-	bool loadFromObjectFile (std::string sFileName);
+	bool loadFromObjectFile (std::string sFileName, bool bIsTexture = false);
 
 	std::vector<TexturedTriangle> getTris () const;
 
 private:
 	std::vector<TexturedTriangle> tris;
 	std::vector<Vec3D> vertices;
+	std::vector<Vec2D> textures;
 };

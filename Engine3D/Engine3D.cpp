@@ -12,6 +12,10 @@ Engine3D::Engine3D () {
 bool Engine3D::OnUserCreate () {
 	meshCube = Mesh ("mountains.obj");
 
+	pDepthBuffer = new float[ScreenWidth () * ScreenHeight ()];
+
+	sprTex1 = new olc::Sprite ("Jario.spr");
+
 	// Projection Matrix
 	projMat = projMat.project (90.0f, (float) ScreenHeight () / (float) ScreenWidth (), 0.1f, 1000.0f);
 
@@ -145,6 +149,9 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 				for (int i = 0; i < projectedTriangle.getSize () / 2; i++) {
 					projectedTriangle.setP (i, (clipped[n].getP (i) * projMat));
 					projectedTriangle.setT (i, (clipped[n].getT (i)));
+					projectedTriangle.setT (i, (Vec2D ((projectedTriangle.getT (i).getU () / projectedTriangle.getP (i).getW ()), projectedTriangle.getT (i).getV (), projectedTriangle.getT (i).getW ())));
+					projectedTriangle.setT (i, (Vec2D (projectedTriangle.getT (i).getU (), (projectedTriangle.getT (i).getV () / projectedTriangle.getP (i).getW ()), projectedTriangle.getT (i).getW ())));
+					projectedTriangle.setT (i, (Vec2D (projectedTriangle.getT (i).getU (), projectedTriangle.getT (i).getV (), (1.0f / projectedTriangle.getP (i).getW ()))));
 					projectedTriangle.setP (i, projectedTriangle.getP (i) / projectedTriangle.getP (i).getW ());
 					projectedTriangle.setP (i, Vec3D (projectedTriangle.getP (i).getX () * -1.0f, projectedTriangle.getP (i).getY () * -1.0f, projectedTriangle.getP (i).getZ ()));
 					projectedTriangle.setP (i, projectedTriangle.getP (i) + vOffsetView);
@@ -165,6 +172,10 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 		});
 
 	FillRect (0, 0, ScreenWidth (), ScreenHeight (), olc::BLACK);
+
+	for (int i = 0; i < ScreenWidth () * ScreenHeight (); i++) {
+		pDepthBuffer[i] = 0.0f;
+	}
 
 	for (auto &tri : trianglesToRasterize) {
 		// Clip triangles against all four screen edges, this could yield
@@ -216,16 +227,171 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 		for (auto &t : listTriangles) {
 		// FillTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getP (1).getX (), t.getP (1).getY (), t.getP (2).getX (), t.getP (2).getY (), t.getColor ());
 		// Wire Frame for Debugging
-			DrawTriangle (t.getP (0).getX (), t.getP (0).getY (),
-			t.getP (1).getX (), t.getP (1).getY (),
-			t.getP (2).getX (), t.getP (2).getY (),
-			olc::WHITE);
+			DrawTexturedTriangle (t.getP(0).getX (), t.getP(0).getY (), t.getT(0).getU (), t.getT(0).getV (), t.getT (0).getW (),
+				t.getP (1).getX (), t.getP (1).getY (), t.getT (1).getU (), t.getT (1).getV (), t.getT (1).getW (),
+				t.getP (2).getX (), t.getP (2).getY (), t.getT (2).getU (), t.getT (2).getV (), t.getT (2).getW (), sprTex1);
 		}
 		
 	}
 
 	return true;
 }
+
+void Engine3D::DrawTexturedTriangle (int x1, int y1, float u1, float v1, float w1,
+	int x2, int y2, float u2, float v2, float w2,
+	int x3, int y3, float u3, float v3, float w3,
+	olc::Sprite *tex) {
+	if (y2 < y1) {
+		std::swap (y1, y2);
+		std::swap (x1, x2);
+		std::swap (u1, u2);
+		std::swap (v1, v2);
+		std::swap (w1, w2);
+	}
+
+	if (y3 < y1) {
+		std::swap (y1, y3);
+		std::swap (x1, x3);
+		std::swap (u1, u3);
+		std::swap (v1, v3);
+		std::swap (w1, w3);
+	}
+
+	if (y3 < y2) {
+		std::swap (y2, y3);
+		std::swap (x2, x3);
+		std::swap (u2, u3);
+		std::swap (v2, v3);
+		std::swap (w2, w3);
+	}
+
+	int dy1 = y2 - y1;
+	int dx1 = x2 - x1;
+	float dv1 = v2 - v1;
+	float du1 = u2 - u1;
+	float dw1 = w2 - w1;
+
+	int dy2 = y3 - y1;
+	int dx2 = x3 - x1;
+	float dv2 = v3 - v1;
+	float du2 = u3 - u1;
+	float dw2 = w3 - w1;
+
+	float tex_u, tex_v, tex_w;
+
+	float dax_step = 0, dbx_step = 0,
+		du1_step = 0, dv1_step = 0,
+		du2_step = 0, dv2_step = 0,
+		dw1_step = 0, dw2_step = 0;
+
+	if (dy1) dax_step = dx1 / (float) abs (dy1);
+	if (dy2) dbx_step = dx2 / (float) abs (dy2);
+
+	if (dy1) du1_step = du1 / (float) abs (dy1);
+	if (dy1) dv1_step = dv1 / (float) abs (dy1);
+	if (dy1) dw1_step = dw1 / (float) abs (dy1);
+
+	if (dy2) du2_step = du2 / (float) abs (dy2);
+	if (dy2) dv2_step = dv2 / (float) abs (dy2);
+	if (dy2) dw2_step = dw2 / (float) abs (dy2);
+
+	if (dy1) {
+		for (int i = y1; i <= y2; i++) {
+			int ax = x1 + (float) (i - y1) * dax_step;
+			int bx = x1 + (float) (i - y1) * dbx_step;
+
+			float tex_su = u1 + (float) (i - y1) * du1_step;
+			float tex_sv = v1 + (float) (i - y1) * dv1_step;
+			float tex_sw = w1 + (float) (i - y1) * dw1_step;
+
+			float tex_eu = u1 + (float) (i - y1) * du2_step;
+			float tex_ev = v1 + (float) (i - y1) * dv2_step;
+			float tex_ew = w1 + (float) (i - y1) * dw2_step;
+
+			if (ax > bx) {
+				std::swap (ax, bx);
+				std::swap (tex_su, tex_eu);
+				std::swap (tex_sv, tex_ev);
+				std::swap (tex_sw, tex_ew);
+			}
+
+			tex_u = tex_su;
+			tex_v = tex_sv;
+			tex_w = tex_sw;
+
+			float tstep = 1.0f / ((float) (bx - ax));
+			float t = 0.0f;
+
+			for (int j = ax; j < bx; j++) {
+				tex_u = (1.0f - t) * tex_su + t * tex_eu;
+				tex_v = (1.0f - t) * tex_sv + t * tex_ev;
+				tex_w = (1.0f - t) * tex_sw + t * tex_ew;
+				if (tex_w > pDepthBuffer[i * ScreenWidth () + j]) {
+					Draw (j, i, tex->Sample (tex_u / tex_w, tex_v / tex_w));
+					pDepthBuffer[i * ScreenWidth () + j] = tex_w;
+				}
+				t += tstep;
+			}
+
+		}
+	}
+
+	dy1 = y3 - y2;
+	dx1 = x3 - x2;
+	dv1 = v3 - v2;
+	du1 = u3 - u2;
+	dw1 = w3 - w2;
+
+	if (dy1) dax_step = dx1 / (float) abs (dy1);
+	if (dy2) dbx_step = dx2 / (float) abs (dy2);
+
+	du1_step = 0, dv1_step = 0;
+	if (dy1) du1_step = du1 / (float) abs (dy1);
+	if (dy1) dv1_step = dv1 / (float) abs (dy1);
+	if (dy1) dw1_step = dw1 / (float) abs (dy1);
+
+	if (dy1) {
+		for (int i = y2; i <= y3; i++) {
+			int ax = x2 + (float) (i - y2) * dax_step;
+			int bx = x1 + (float) (i - y1) * dbx_step;
+
+			float tex_su = u2 + (float) (i - y2) * du1_step;
+			float tex_sv = v2 + (float) (i - y2) * dv1_step;
+			float tex_sw = w2 + (float) (i - y2) * dw1_step;
+
+			float tex_eu = u1 + (float) (i - y1) * du2_step;
+			float tex_ev = v1 + (float) (i - y1) * dv2_step;
+			float tex_ew = w1 + (float) (i - y1) * dw2_step;
+
+			if (ax > bx) {
+				std::swap (ax, bx);
+				std::swap (tex_su, tex_eu);
+				std::swap (tex_sv, tex_ev);
+				std::swap (tex_sw, tex_ew);
+			}
+
+			tex_u = tex_su;
+			tex_v = tex_sv;
+			tex_w = tex_sw;
+
+			float tstep = 1.0f / ((float) (bx - ax));
+			float t = 0.0f;
+
+			for (int j = ax; j < bx; j++) {
+				tex_u = (1.0f - t) * tex_su + t * tex_eu;
+				tex_v = (1.0f - t) * tex_sv + t * tex_ev;
+				tex_w = (1.0f - t) * tex_sw + t * tex_ew;
+
+				if (tex_w > pDepthBuffer[i * ScreenWidth () + j]) {
+					Draw (j, i, tex->Sample (tex_u / tex_w, tex_v / tex_w));
+					pDepthBuffer[i * ScreenWidth () + j] = tex_w;
+				}
+				t += tstep;
+			}
+		}
+	}
+}
+
 
 Mat4x4 Engine3D::pointAt (Vec3D &pos, Vec3D &target, Vec3D &up) const {
 	// Calculate new forward direction
@@ -265,12 +431,12 @@ Mat4x4 Engine3D::pointAt (Vec3D &pos, Vec3D &target, Vec3D &up) const {
 	return matrix;
 }
 
-int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, TexturedTriangle &in_tri, TexturedTriangle &out_tri1, Triangle &out_tri2) {
+int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, TexturedTriangle &in_tri, TexturedTriangle &out_tri1, TexturedTriangle &out_tri2) {
 	// Make sure plane normal is indeed normal
 	plane_n = Vec3D::normalize (plane_n);
 
-	float t, u, v;
-	Vec2D tmpVec (u, v);
+	float t, u, v, w;
+	Vec2D tmpVec (u, v, w);
 
 	// Return case instead of multiple returns
 	int returnCase = 0;
@@ -363,19 +529,23 @@ int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, TexturedTriangle &
 
 		u = t * (outside_tex[0].getU () - inside_tex[0].getU ()) + inside_tex[0].getU ();
 		v = t * (outside_tex[0].getV () - inside_tex[0].getV ()) + inside_tex[0].getV ();
+		w = t * (outside_tex[0].getW () - inside_tex[0].getW ()) + inside_tex[0].getW ();
 
 		tmpVec.setU (u);
 		tmpVec.setV (v);
+		tmpVec.setW (w);
 
 		out_tri1.setT (1, tmpVec);
 
 		out_tri1.setP (2, Vec3D::intersectPlane (plane_p, plane_n, inside_points[0], outside_points[1], t));
 
-		u = t * (outside_tex[0].getU () - inside_tex[0].getU ()) + inside_tex[0].getU ();
-		v = t * (outside_tex[0].getV () - inside_tex[0].getV ()) + inside_tex[0].getV ();
+		u = t * (outside_tex[1].getU () - inside_tex[0].getU ()) + inside_tex[0].getU ();
+		v = t * (outside_tex[1].getV () - inside_tex[0].getV ()) + inside_tex[0].getV ();
+		w = t * (outside_tex[1].getW () - inside_tex[0].getW ()) + inside_tex[0].getW ();
 
 		tmpVec.setU (u);
 		tmpVec.setV (v);
+		tmpVec.setW (w);
 
 		out_tri1.setT (2, tmpVec);
 
@@ -399,14 +569,37 @@ int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, TexturedTriangle &
 		out_tri1.setP (1, inside_points[1]);
 		out_tri1.setT (0, inside_tex[0]);
 		out_tri1.setT (1, inside_tex[1]);
+
+
 		out_tri1.setP (2, Vec3D::intersectPlane (plane_p, plane_n, inside_points[0], outside_points[0], t));
+
+		u = t * (outside_tex[0].getU () - inside_tex[0].getU ()) + inside_tex[0].getU ();
+		v = t * (outside_tex[0].getV () - inside_tex[0].getV ()) + inside_tex[0].getV ();
+		w = t * (outside_tex[0].getW () - inside_tex[0].getW ()) + inside_tex[0].getW ();
+
+		tmpVec.setU (u);
+		tmpVec.setV (v);
+		tmpVec.setW (w);
+
+		out_tri1.setT (2, tmpVec);
 
 		// The second triangle is composed of one of he inside points, a
 		// new point determined by the intersection of the other side of the 
 		// triangle and the plane, and the newly created point above
 		out_tri2.setP (0, inside_points[1]);
+		out_tri2.setT (0, inside_tex[1]);
 		out_tri2.setP (1, out_tri1.getP (2));
+		out_tri2.setT (1, out_tri1.getT (2));
 		out_tri2.setP (2, Vec3D::intersectPlane (plane_p, plane_n, inside_points[1], outside_points[0], t));
+		u = t * (outside_tex[0].getU () - inside_tex[1].getU ()) + inside_tex[1].getU ();
+		v = t * (outside_tex[0].getV () - inside_tex[1].getV ()) + inside_tex[1].getV ();
+		w = t * (outside_tex[0].getW () - inside_tex[1].getW ()) + inside_tex[1].getW ();
+
+		tmpVec.setU (u);
+		tmpVec.setV (v);
+		tmpVec.setW (w);
+
+		out_tri2.setT (2, tmpVec);
 		
 		returnCase = 2; // Return two newly formed triangles which form a quad
 	}

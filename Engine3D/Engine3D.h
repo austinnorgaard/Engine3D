@@ -23,7 +23,8 @@ public:
 	bool OnUserUpdate (float fElapsedTime) override;
 
 	Mat4x4 pointAt (Vec3D &pos, Vec3D &target, Vec3D &up) const;
-	int clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, TexturedTriangle &in_tri, TexturedTriangle &out_tri1, Triangle &out_tri2);
+	int clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, TexturedTriangle &in_tri, TexturedTriangle &out_tri1, TexturedTriangle &out_tri2);
+	void DrawTexturedTriangle (int x1, int y1, float u1, float v1, float w1, int x2, int y2, float u2, float v2, float w2, int x3, int y3, float u3, float v3, float w3, olc::Sprite *tex);
 
 private:
 	Mesh meshCube;
@@ -32,4 +33,6 @@ private:
 	Vec3D vCamera;
 	Vec3D vLookDirection;
 	float fYaw;
+	olc::Sprite *sprTex1;
+	float *pDepthBuffer = nullptr;
 };
