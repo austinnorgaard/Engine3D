@@ -3,10 +3,12 @@
 #pragma warning (disable: 4996)
 
 #include "olcPixelGameEngine.h"
-#include "triangle.h"
-#include "mesh.h"
-#include "mat4x4.h"
-#include "vec3d.h"
+#include "Triangle.h"
+#include "TexturedTriangle.h"
+#include "Mesh.h"
+#include "Mat4x4.h"
+#include "Vec3D.h"
+#include "Vec2D.h"
 
 #include <fstream>
 #include <strstream>
@@ -21,7 +23,7 @@ public:
 	bool OnUserUpdate (float fElapsedTime) override;
 
 	Mat4x4 pointAt (Vec3D &pos, Vec3D &target, Vec3D &up) const;
-	int clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, Triangle &out_tri1, Triangle &out_tri2);
+	int clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, TexturedTriangle &in_tri, TexturedTriangle &out_tri1, Triangle &out_tri2);
 
 private:
 	Mesh meshCube;

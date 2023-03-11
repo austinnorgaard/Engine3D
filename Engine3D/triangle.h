@@ -3,11 +3,13 @@
 #pragma warning (disable: 4996)
 
 #include "olcPixelGameEngine.h"
-#include "vec3d.h"
+#include "Vec3D.h"
+#include "Vec2D.h"
 
 class Triangle {
 public:
 	Triangle ();
+	Triangle (Triangle &tri);
 	Triangle (Vec3D vec1, Vec3D vec2, Vec3D vec3);
 
 	void setColor (olc::Pixel newCol);
@@ -18,10 +20,13 @@ public:
 
 	int getSize () const;
 
-private:
+protected:
 	olc::Pixel col;
 	Vec3D p[3];
 
 	// Number of Points
 	int size;
+
+private:
+
 };

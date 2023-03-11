@@ -2,7 +2,8 @@
 
 #pragma warning (disable: 4996)
 
-#include "triangle.h"
+#include "Triangle.h"
+#include "TexturedTriangle.h"
 #include <strstream>
 #include <fstream>
 
@@ -13,9 +14,9 @@ public:
 
 	bool loadFromObjectFile (std::string sFileName);
 
-	std::vector<Triangle> getTris () const;
+	std::vector<TexturedTriangle> getTris () const;
 
 private:
-	std::vector<Triangle> tris;
+	std::vector<TexturedTriangle> tris;
 	std::vector<Vec3D> vertices;
 };

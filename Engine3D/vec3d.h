@@ -2,7 +2,7 @@
 
 #pragma warning (disable: 4996)
 
-#include "mat4x4.h"
+#include "Mat4x4.h"
 #include <iostream>
 
 class Vec3D {
@@ -22,7 +22,7 @@ public:
 
 	static Vec3D normalize (const Vec3D &vec);
 	static Vec3D crossProduct (const Vec3D &vec1, const Vec3D &vec2);
-	static Vec3D intersectPlane (Vec3D &plane_p, Vec3D &plane_n, Vec3D &lineStart, Vec3D &lineEnd);
+	static Vec3D intersectPlane (Vec3D &plane_p, Vec3D &plane_n, Vec3D &lineStart, Vec3D &lineEnd, float &t);
 
 	void setX (float newX);
 	void setY (float newY);

@@ -10,35 +10,6 @@ Engine3D::Engine3D () {
 }
 
 bool Engine3D::OnUserCreate () {
-	// Handcrafted Cube
-	//meshCube.tris = {
-
-	//		// SOUTH
-	//		{ 0.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 0.0f },
-	//		{ 0.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f },
-
-	//		// EAST                                                      
-	//		{ 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f },
-	//		{ 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f },
-
-	//		// NORTH                                                     
-	//		{ 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f },
-	//		{ 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f },
-
-	//		// WEST                                                      
-	//		{ 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f },
-	//		{ 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f },
-
-	//		// TOP                                                       
-	//		{ 0.0f, 1.0f, 0.0f,    0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f },
-	//		{ 0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 0.0f },
-
-	//		// BOTTOM                                                    
-	//		{ 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f },
-	//		{ 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f },
-
-	//	};
-
 	meshCube = Mesh ("mountains.obj");
 
 	// Projection Matrix
@@ -116,15 +87,16 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	Mat4x4 viewMatrix = Mat4x4::inverse (cameraMatrix);
 
 	// Store triangles
-	std::vector<Triangle> trianglesToRasterize;
+	std::vector<TexturedTriangle> trianglesToRasterize;
 
 	// Draw Triangles
 
 	for (auto &tri : meshCube.getTris ()) {
-		Triangle projectedTriangle, transformedTriangle, viewedTriangle;
+		TexturedTriangle projectedTriangle, transformedTriangle, viewedTriangle;
 
-		for (int i = 0; i < transformedTriangle.getSize (); i++) {
+		for (int i = 0; i < transformedTriangle.getSize () / 2; i++) {
 			transformedTriangle.setP (i, (tri.getP (i) * worldMat));
+			transformedTriangle.setT (i, tri.getT (i));
 		}
 
 		// Use Cross-Product to get surface normal
@@ -155,22 +127,24 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 			transformedTriangle.setColor(GetColour (dpLD));
 
 			// Convert World Space --> View Space
-			for (int i = 0; i < viewedTriangle.getSize (); i++) {
+			for (int i = 0; i < viewedTriangle.getSize () / 2; i++) {
 				viewedTriangle.setP (i, (transformedTriangle.getP (i) *viewMatrix));
+				viewedTriangle.setT (i, transformedTriangle.getT (i));
 			}
 			viewedTriangle.setColor (transformedTriangle.getColor ());
 
 			// Clip Viewed Triangle against near plane, this could form two additional
 			// additional triangles. 
 			int nClippedTriangles = 0;
-			Triangle clipped[2];
+			TexturedTriangle clipped[2];
 			nClippedTriangles = clipAgainstPlane ({0.0f, 0.0f, 0.1f}, {0.0f, 0.0f, 1.0f}, viewedTriangle, clipped[0], clipped[1]);
 			Vec3D vOffsetView = {1, 1, 0};
 
 			for (int n = 0; n < nClippedTriangles; n++) {
 				// Project triangles from 3D --> 2D
-				for (int i = 0; i < projectedTriangle.getSize (); i++) {
+				for (int i = 0; i < projectedTriangle.getSize () / 2; i++) {
 					projectedTriangle.setP (i, (clipped[n].getP (i) * projMat));
+					projectedTriangle.setT (i, (clipped[n].getT (i)));
 					projectedTriangle.setP (i, projectedTriangle.getP (i) / projectedTriangle.getP (i).getW ());
 					projectedTriangle.setP (i, Vec3D (projectedTriangle.getP (i).getX () * -1.0f, projectedTriangle.getP (i).getY () * -1.0f, projectedTriangle.getP (i).getZ ()));
 					projectedTriangle.setP (i, projectedTriangle.getP (i) + vOffsetView);
@@ -184,7 +158,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	}
 
 	// Sort triangles from back to front
-	std::sort (trianglesToRasterize.begin (), trianglesToRasterize.end (), [](Triangle &t1, Triangle &t2) {
+	std::sort (trianglesToRasterize.begin (), trianglesToRasterize.end (), [](TexturedTriangle &t1, TexturedTriangle &t2) {
 		float z1 = (t1.getP (0).getZ () + t1.getP (1).getZ () + t1.getP (2).getZ ()) / 3.0f;
 		float z2 = (t2.getP (0).getZ () + t2.getP (1).getZ () + t2.getP (2).getZ ()) / 3.0f;
 		return z1 > z2;
@@ -196,8 +170,8 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 		// Clip triangles against all four screen edges, this could yield
 		// a bunch of triangles, so create a queue that we traverse to 
 		//  ensure we only test new triangles generated against planes
-		Triangle clipped[2];
-		std::list<Triangle> listTriangles;
+		TexturedTriangle clipped[2];
+		std::list<TexturedTriangle> listTriangles;
 
 		// Add initial triangle
 		listTriangles.push_back (tri);
@@ -207,7 +181,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 			int nTrisToAdd = 0;
 			while (nNewTriangles > 0) {
 				// Take triangle from front of queue
-				Triangle test = listTriangles.front ();
+				TexturedTriangle test = listTriangles.front ();
 				listTriangles.pop_front ();
 				nNewTriangles--;
 
@@ -240,12 +214,12 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 
 		// Draw the transformed, viewed, clipped, projected, sorted, clipped triangles
 		for (auto &t : listTriangles) {
-		FillTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getP (1).getX (), t.getP (1).getY (), t.getP (2).getX (), t.getP (2).getY (), t.getColor ());
+		// FillTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getP (1).getX (), t.getP (1).getY (), t.getP (2).getX (), t.getP (2).getY (), t.getColor ());
 		// Wire Frame for Debugging
-			/*DrawTriangle (t.getP (0).getX (), t.getP (0).getY (),
+			DrawTriangle (t.getP (0).getX (), t.getP (0).getY (),
 			t.getP (1).getX (), t.getP (1).getY (),
 			t.getP (2).getX (), t.getP (2).getY (),
-			olc::WHITE);*/
+			olc::WHITE);
 		}
 		
 	}
@@ -291,9 +265,12 @@ Mat4x4 Engine3D::pointAt (Vec3D &pos, Vec3D &target, Vec3D &up) const {
 	return matrix;
 }
 
-int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, Triangle &out_tri1, Triangle &out_tri2) {
+int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, TexturedTriangle &in_tri, TexturedTriangle &out_tri1, Triangle &out_tri2) {
 	// Make sure plane normal is indeed normal
 	plane_n = Vec3D::normalize (plane_n);
+
+	float t, u, v;
+	Vec2D tmpVec (u, v);
 
 	// Return case instead of multiple returns
 	int returnCase = 0;
@@ -310,6 +287,10 @@ int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, 
 	int nInsidePointCount = 0;
 	Vec3D outside_points[3]; 
 	int nOutsidePointCount = 0;
+	Vec2D inside_tex[3];
+	int nInsideTexturePointCount = 0;
+	Vec2D outside_tex[3];
+	int nOutsideTexturePointCount = 0;
 
 	// Get signed distance of each point in triangle to plane
 	Vec3D p = Vec3D();
@@ -322,21 +303,27 @@ int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, 
 
 	if (d0 >= 0) {
 		inside_points[nInsidePointCount++] = in_tri.getP (0); 
+		inside_tex[nInsideTexturePointCount++] = in_tri.getT (0);
 	}
 	else { 
-		outside_points[nOutsidePointCount++] = in_tri.getP (0); 
+		outside_points[nOutsidePointCount++] = in_tri.getP (0);
+		outside_tex[nOutsideTexturePointCount++] = in_tri.getT (0);
 	};
 	if (d1 >= 0) { 
-		inside_points[nInsidePointCount++] = in_tri.getP (1); 
+		inside_points[nInsidePointCount++] = in_tri.getP (1);
+		inside_tex[nInsideTexturePointCount++] = in_tri.getT (1);
 	}
 	else { 
 		outside_points[nOutsidePointCount++] = in_tri.getP (1); 
+		outside_tex[nOutsideTexturePointCount++] = in_tri.getT (1);
 	}
 	if (d2 >= 0) { 
-		inside_points[nInsidePointCount++] = in_tri.getP (2); 
+		inside_points[nInsidePointCount++] = in_tri.getP (2);
+		inside_tex[nInsideTexturePointCount++] = in_tri.getT (2);
 	}
 	else { 
 		outside_points[nOutsidePointCount++] = in_tri.getP (2); 
+		outside_tex[nOutsideTexturePointCount++] = in_tri.getT (2);
 	}
 
 	// Now classify triangle points, and break the input triangle into 
@@ -367,11 +354,30 @@ int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, 
 
 		// The inside point is valid, so keep that...
 		out_tri1.setP (0, inside_points[0]);
+		out_tri1.setT (0, inside_tex[0]);
 
 		// but the two new points are at the locations where the 
 		// original sides of the triangle (lines) intersect with the plane
-		out_tri1.setP (1, Vec3D::intersectPlane (plane_p, plane_n, inside_points[0], outside_points[0]));
-		out_tri1.setP (2, Vec3D::intersectPlane (plane_p, plane_n, inside_points[0], outside_points[1]));
+
+		out_tri1.setP (1, Vec3D::intersectPlane (plane_p, plane_n, inside_points[0], outside_points[0], t));
+
+		u = t * (outside_tex[0].getU () - inside_tex[0].getU ()) + inside_tex[0].getU ();
+		v = t * (outside_tex[0].getV () - inside_tex[0].getV ()) + inside_tex[0].getV ();
+
+		tmpVec.setU (u);
+		tmpVec.setV (v);
+
+		out_tri1.setT (1, tmpVec);
+
+		out_tri1.setP (2, Vec3D::intersectPlane (plane_p, plane_n, inside_points[0], outside_points[1], t));
+
+		u = t * (outside_tex[0].getU () - inside_tex[0].getU ()) + inside_tex[0].getU ();
+		v = t * (outside_tex[0].getV () - inside_tex[0].getV ()) + inside_tex[0].getV ();
+
+		tmpVec.setU (u);
+		tmpVec.setV (v);
+
+		out_tri1.setT (2, tmpVec);
 
 		returnCase = 1; // Return the newly formed single triangle
 	}
@@ -391,15 +397,17 @@ int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, 
 		// intersects with the plane
 		out_tri1.setP (0, inside_points[0]);
 		out_tri1.setP (1, inside_points[1]);
-		out_tri1.setP (2, Vec3D::intersectPlane (plane_p, plane_n, inside_points[0], outside_points[0]));
+		out_tri1.setT (0, inside_tex[0]);
+		out_tri1.setT (1, inside_tex[1]);
+		out_tri1.setP (2, Vec3D::intersectPlane (plane_p, plane_n, inside_points[0], outside_points[0], t));
 
 		// The second triangle is composed of one of he inside points, a
 		// new point determined by the intersection of the other side of the 
 		// triangle and the plane, and the newly created point above
 		out_tri2.setP (0, inside_points[1]);
 		out_tri2.setP (1, out_tri1.getP (2));
-		out_tri2.setP (2, Vec3D::intersectPlane (plane_p, plane_n, inside_points[1], outside_points[0]));
-
+		out_tri2.setP (2, Vec3D::intersectPlane (plane_p, plane_n, inside_points[1], outside_points[0], t));
+		
 		returnCase = 2; // Return two newly formed triangles which form a quad
 	}
 

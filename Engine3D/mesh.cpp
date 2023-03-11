@@ -1,4 +1,4 @@
-#include "mesh.h"
+#include "Mesh.h"
 
 Mesh::Mesh () {
 
@@ -33,13 +33,14 @@ bool Mesh::loadFromObjectFile (std::string sFileName) {
 		if (line[0] == 'f') {
 			int f[3];
 			s >> unUsed >> f[0] >> f[1] >> f[2];
-			tris.push_back ({vertices[f[0] - 1], vertices[f[1] - 1], vertices[f[2] - 1]});
+			TexturedTriangle t (vertices[f[0] - 1], vertices[f[1] - 1], vertices[f[2] - 1]);
+			tris.push_back (t);
 		}
 	}
 
 	return true;
 }
 
-std::vector<Triangle> Mesh::getTris () const {
+std::vector<TexturedTriangle> Mesh::getTris () const {
 	return tris;
 }

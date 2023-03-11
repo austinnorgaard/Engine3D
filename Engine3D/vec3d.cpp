@@ -1,4 +1,4 @@
-#include "vec3d.h"
+#include "Vec3D.h"
 
 Vec3D::Vec3D () {
 	x = 0;
@@ -66,12 +66,12 @@ Vec3D Vec3D::crossProduct (const Vec3D &vec1, const Vec3D &vec2) {
 	return vector;
 }
 
-Vec3D Vec3D::intersectPlane (Vec3D &plane_p, Vec3D &plane_n, Vec3D &lineStart, Vec3D &lineEnd) {
+Vec3D Vec3D::intersectPlane (Vec3D &plane_p, Vec3D &plane_n, Vec3D &lineStart, Vec3D &lineEnd, float &t) {
 	plane_n = normalize(plane_n);
 	float plane_d = -1.0f * (dotProduct (plane_n, plane_p));
 	float ad = dotProduct (lineStart, plane_n);
 	float bd = dotProduct (lineEnd, plane_n);
-	float t = (-1.0f * plane_d - ad) / (bd - ad);
+	t = (-1.0f * plane_d - ad) / (bd - ad);
 	Vec3D lineStartToEnd = (lineEnd - lineStart);
 	Vec3D lineToIntersect = (lineStartToEnd * t);
 	return (lineStart + lineToIntersect);
