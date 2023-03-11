@@ -9,7 +9,7 @@
 class Mesh {
 public:
 	Mesh ();
-	Mesh (std::string sFileName);
+	Mesh (std::string sFileName, bool bIsTexture = false);
 
 	bool loadFromObjectFile (std::string sFileName, bool bIsTexture = false);
 

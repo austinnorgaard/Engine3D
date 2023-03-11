@@ -4,8 +4,8 @@ Mesh::Mesh () {
 
 }
 
-Mesh::Mesh (std::string sFileName) {
-	loadFromObjectFile (sFileName);
+Mesh::Mesh (std::string sFileName, bool bIsTexture) {
+	loadFromObjectFile (sFileName, bIsTexture);
 }
 
 bool Mesh::loadFromObjectFile (std::string sFileName, bool bIsTexture) {
@@ -64,12 +64,11 @@ bool Mesh::loadFromObjectFile (std::string sFileName, bool bIsTexture) {
 
 				tokens[nTokenCount].pop_back ();
 
-
-				tris.push_back ({vertices[stoi (tokens[0]) - 1], vertices[stoi (tokens[2]) - 1], vertices[stoi (tokens[4]) - 1],
-								textures[stoi (tokens[1]) - 1], textures[stoi (tokens[3]) - 1], textures[stoi (tokens[5]) - 1]});
+				Triangle t (vertices[std::stoi (tokens[0]) - 1], vertices[std::stoi (tokens[2]) - 1], vertices[std::stoi (tokens[4]) - 1], 
+							textures[std::stoi (tokens[1]) - 1], textures[std::stoi (tokens[3]) - 1], textures[std::stoi (tokens[5]) - 1]);
+				tris.push_back (t);
 
 			}
-
 		}
 	}
 

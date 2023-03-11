@@ -10,11 +10,11 @@ Engine3D::Engine3D () {
 }
 
 bool Engine3D::OnUserCreate () {
-	meshCube = Mesh ("mountains.obj");
+	meshCube = Mesh ("Crate1.obj", true);
 
 	pDepthBuffer = new float[ScreenWidth () * ScreenHeight ()];
 
-	sprTex1 = new olc::Sprite ("Jario.spr");
+	sprTex1 = new olc::Sprite ("crate_1.jpg");
 
 	// Projection Matrix
 	projMat = projMat.project (90.0f, (float) ScreenHeight () / (float) ScreenWidth (), 0.1f, 1000.0f);
@@ -98,7 +98,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	for (auto &tri : meshCube.getTris ()) {
 		Triangle projectedTriangle, transformedTriangle, viewedTriangle;
 
-		for (int i = 0; i < transformedTriangle.getSize () / 2; i++) {
+		for (int i = 0; i < transformedTriangle.getSize (); i++) {
 			transformedTriangle.setP (i, (tri.getP (i) * worldMat));
 			transformedTriangle.setT (i, tri.getT (i));
 		}
@@ -131,7 +131,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 			transformedTriangle.setColor(GetColour (dpLD));
 
 			// Convert World Space --> View Space
-			for (int i = 0; i < viewedTriangle.getSize () / 2; i++) {
+			for (int i = 0; i < viewedTriangle.getSize (); i++) {
 				viewedTriangle.setP (i, (transformedTriangle.getP (i) *viewMatrix));
 				viewedTriangle.setT (i, transformedTriangle.getT (i));
 			}
@@ -146,7 +146,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 
 			for (int n = 0; n < nClippedTriangles; n++) {
 				// Project triangles from 3D --> 2D
-				for (int i = 0; i < projectedTriangle.getSize () / 2; i++) {
+				for (int i = 0; i < projectedTriangle.getSize (); i++) {
 					projectedTriangle.setP (i, (clipped[n].getP (i) * projMat));
 					projectedTriangle.setT (i, (clipped[n].getT (i)));
 					projectedTriangle.setT (i, (Vec2D ((projectedTriangle.getT (i).getU () / projectedTriangle.getP (i).getW ()), projectedTriangle.getT (i).getV (), projectedTriangle.getT (i).getW ())));
@@ -238,9 +238,9 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 }
 
 void Engine3D::DrawTexturedTriangle (int x1, int y1, float u1, float v1, float w1,
-	int x2, int y2, float u2, float v2, float w2,
-	int x3, int y3, float u3, float v3, float w3,
-	olc::Sprite *tex) {
+									 int x2, int y2, float u2, float v2, float w2,
+									 int x3, int y3, float u3, float v3, float w3,
+									 olc::Sprite *tex) {
 	if (y2 < y1) {
 		std::swap (y1, y2);
 		std::swap (x1, x2);
@@ -280,9 +280,9 @@ void Engine3D::DrawTexturedTriangle (int x1, int y1, float u1, float v1, float w
 	float tex_u, tex_v, tex_w;
 
 	float dax_step = 0, dbx_step = 0,
-		du1_step = 0, dv1_step = 0,
-		du2_step = 0, dv2_step = 0,
-		dw1_step = 0, dw2_step = 0;
+		  du1_step = 0, dv1_step = 0,
+		  du2_step = 0, dv2_step = 0,
+		  dw1_step = 0, dw2_step = 0;
 
 	if (dy1) dax_step = dx1 / (float) abs (dy1);
 	if (dy2) dbx_step = dx2 / (float) abs (dy2);
@@ -435,8 +435,8 @@ int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, 
 	// Make sure plane normal is indeed normal
 	plane_n = Vec3D::normalize (plane_n);
 
-	float t, u, v, w;
-	Vec2D tmpVec (u, v, w);
+	float u, v, w;
+	Vec2D tmpVec;
 
 	// Return case instead of multiple returns
 	int returnCase = 0;
@@ -525,6 +525,7 @@ int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, 
 		// but the two new points are at the locations where the 
 		// original sides of the triangle (lines) intersect with the plane
 
+		float t;
 		out_tri1.setP (1, Vec3D::intersectPlane (plane_p, plane_n, inside_points[0], outside_points[0], t));
 
 		u = t * (outside_tex[0].getU () - inside_tex[0].getU ()) + inside_tex[0].getU ();
@@ -570,7 +571,7 @@ int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, 
 		out_tri1.setT (0, inside_tex[0]);
 		out_tri1.setT (1, inside_tex[1]);
 
-
+		float t;
 		out_tri1.setP (2, Vec3D::intersectPlane (plane_p, plane_n, inside_points[0], outside_points[0], t));
 
 		u = t * (outside_tex[0].getU () - inside_tex[0].getU ()) + inside_tex[0].getU ();
