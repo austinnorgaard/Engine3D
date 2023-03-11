@@ -112,6 +112,6 @@ Mat4x4 Mat4x4::inverse (Mat4x4 &matrix2) {
 	return matrix;
 }
 
-int Mat4x4::getSize () const {
+int Mat4x4::getSize () {
 	return size;
 }

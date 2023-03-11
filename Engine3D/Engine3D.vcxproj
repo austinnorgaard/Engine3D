@@ -196,7 +196,6 @@
     <ClCompile Include="Mat4x4.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="olcPixelGameEngine.cpp" />
-    <ClCompile Include="TexturedTriangle.cpp" />
     <ClCompile Include="Triangle.cpp" />
     <ClCompile Include="Vec2D.cpp" />
     <ClCompile Include="Vec3D.cpp" />
@@ -206,7 +205,6 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="olcPixelGameEngine.h" />
     <ClInclude Include="Engine3D.h" />
-    <ClInclude Include="TexturedTriangle.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="Vec2D.h" />
     <ClInclude Include="Vec3D.h" />

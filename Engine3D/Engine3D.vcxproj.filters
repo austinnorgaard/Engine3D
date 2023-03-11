@@ -39,9 +39,6 @@
     <ClCompile Include="Vec2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TexturedTriangle.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine3D.h">
@@ -63,9 +60,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Vec2D.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TexturedTriangle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

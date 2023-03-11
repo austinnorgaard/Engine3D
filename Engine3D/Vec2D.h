@@ -2,7 +2,6 @@
 
 #pragma warning (disable: 4996)
 
-#include <algorithm>
 #include <strstream>
 
 class Vec2D {
@@ -16,9 +15,9 @@ public:
 	void setV (float newV);
 	void setW (float newW);
 
-	float getU ();
-	float getV ();
-	float getW ();
+	float getU () const;
+	float getV () const;
+	float getW () const;
 
 private:
 	float u, v, w;

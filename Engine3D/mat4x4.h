@@ -20,7 +20,7 @@ public:
 	float getMat (int index1, int index2) const;
 	void setMat (int index1, int index2, float newValue);
 
-	int getSize () const;
+	int getSize ();
 
 private:
 	float mat[4][4];

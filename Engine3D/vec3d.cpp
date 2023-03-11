@@ -14,15 +14,15 @@ Vec3D::Vec3D (float newX, float newY, float newZ) {
 	w = 1.0f;
 }
 
-Vec3D Vec3D::operator+ (const Vec3D &vec) const {
+Vec3D Vec3D::operator+ (const Vec3D &vec) {
 	return {x + vec.x, y + vec.y, z + vec.z};
 }
 
-Vec3D Vec3D::operator- (const Vec3D &vec) const {
+Vec3D Vec3D::operator- (const Vec3D &vec) {
 	return {x - vec.x, y - vec.y, z - vec.z};
 }
 
-Vec3D Vec3D::operator* (float k) const {
+Vec3D Vec3D::operator* (float k) {
 	return {x * k, y * k, z * k};
 }
 
@@ -36,7 +36,7 @@ Vec3D operator* (const Vec3D &vec, const Mat4x4 &mat) {
 }
 
 
-Vec3D Vec3D::operator/ (float k) const {
+Vec3D Vec3D::operator/ (float k) {
 	return {x / k, y / k, z / k};
 }
 
@@ -45,20 +45,20 @@ std::istream &operator>> (std::istream &input, Vec3D &vec) {
 	return input;
 }
 
-float Vec3D::dotProduct (const Vec3D &vec1, const Vec3D &vec2) {
+float Vec3D::dotProduct (Vec3D &vec1, Vec3D &vec2) {
 	return vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z;
 }
 
-float Vec3D::len (const Vec3D &vec) {
+float Vec3D::len (Vec3D &vec) {
 	return sqrtf (dotProduct (vec, vec));
 }
 
-Vec3D Vec3D::normalize (const Vec3D &vec) {
+Vec3D Vec3D::normalize (Vec3D &vec) {
 	float l = len(vec);
 	return {vec.x / l, vec.y / l, vec.z / l};
 }
 
-Vec3D Vec3D::crossProduct (const Vec3D &vec1, const Vec3D &vec2) {
+Vec3D Vec3D::crossProduct (Vec3D &vec1, Vec3D &vec2) {
 	Vec3D vector;
 	vector.x = vec1.y * vec2.z - vec1.z * vec2.y;
 	vector.y = vec1.z * vec2.x - vec1.x * vec2.z;
@@ -93,18 +93,18 @@ void Vec3D::setW (float newW) {
 	w = newW;
 }
 
-float Vec3D::getX () const {
+float Vec3D::getX () {
 	return x;
 }
 
-float Vec3D::getY () const {
+float Vec3D::getY () {
 	return y;
 }
 
-float Vec3D::getZ () const {
+float Vec3D::getZ () {
 	return z;
 }
 
-float Vec3D::getW () const {
+float Vec3D::getW () {
 	return w;
 }

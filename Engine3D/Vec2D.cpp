@@ -29,14 +29,14 @@ void Vec2D::setW (float newW) {
 	w = newW;
 }
 
-float Vec2D::getU () {
+float Vec2D::getU () const {
 	return u;
 }
 
-float Vec2D::getV () {
+float Vec2D::getV () const {
 	return v;
 }
 
-float Vec2D::getW () {
+float Vec2D::getW () const {
 	return w;
 }

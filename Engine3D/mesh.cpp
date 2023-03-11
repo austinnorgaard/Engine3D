@@ -41,7 +41,7 @@ bool Mesh::loadFromObjectFile (std::string sFileName, bool bIsTexture) {
 			if (line[0] == 'f') {
 				int f[3];
 				s >> unUsed >> f[0] >> f[1] >> f[2];
-				TexturedTriangle t (vertices[f[0] - 1], vertices[f[1] - 1], vertices[f[2] - 1]);
+				Triangle t (vertices[f[0] - 1], vertices[f[1] - 1], vertices[f[2] - 1]);
 				tris.push_back (t);
 			}
 		}
@@ -66,7 +66,7 @@ bool Mesh::loadFromObjectFile (std::string sFileName, bool bIsTexture) {
 
 
 				tris.push_back ({vertices[stoi (tokens[0]) - 1], vertices[stoi (tokens[2]) - 1], vertices[stoi (tokens[4]) - 1],
-					textures[stoi (tokens[1]) - 1], textures[stoi (tokens[3]) - 1], textures[stoi (tokens[5]) - 1]});
+								textures[stoi (tokens[1]) - 1], textures[stoi (tokens[3]) - 1], textures[stoi (tokens[5]) - 1]});
 
 			}
 
@@ -76,6 +76,6 @@ bool Mesh::loadFromObjectFile (std::string sFileName, bool bIsTexture) {
 	return true;
 }
 
-std::vector<TexturedTriangle> Mesh::getTris () const {
+std::vector<Triangle> Mesh::getTris () {
 	return tris;
 }

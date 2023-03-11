@@ -3,7 +3,6 @@
 #pragma warning (disable: 4996)
 
 #include "Triangle.h"
-#include "TexturedTriangle.h"
 #include <strstream>
 #include <fstream>
 
@@ -14,10 +13,10 @@ public:
 
 	bool loadFromObjectFile (std::string sFileName, bool bIsTexture = false);
 
-	std::vector<TexturedTriangle> getTris () const;
+	std::vector<Triangle> getTris ();
 
 private:
-	std::vector<TexturedTriangle> tris;
+	std::vector<Triangle> tris;
 	std::vector<Vec3D> vertices;
 	std::vector<Vec2D> textures;
 };

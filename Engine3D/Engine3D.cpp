@@ -91,12 +91,12 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	Mat4x4 viewMatrix = Mat4x4::inverse (cameraMatrix);
 
 	// Store triangles
-	std::vector<TexturedTriangle> trianglesToRasterize;
+	std::vector<Triangle> trianglesToRasterize;
 
 	// Draw Triangles
 
 	for (auto &tri : meshCube.getTris ()) {
-		TexturedTriangle projectedTriangle, transformedTriangle, viewedTriangle;
+		Triangle projectedTriangle, transformedTriangle, viewedTriangle;
 
 		for (int i = 0; i < transformedTriangle.getSize () / 2; i++) {
 			transformedTriangle.setP (i, (tri.getP (i) * worldMat));
@@ -140,7 +140,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 			// Clip Viewed Triangle against near plane, this could form two additional
 			// additional triangles. 
 			int nClippedTriangles = 0;
-			TexturedTriangle clipped[2];
+			Triangle clipped[2];
 			nClippedTriangles = clipAgainstPlane ({0.0f, 0.0f, 0.1f}, {0.0f, 0.0f, 1.0f}, viewedTriangle, clipped[0], clipped[1]);
 			Vec3D vOffsetView = {1, 1, 0};
 
@@ -165,7 +165,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	}
 
 	// Sort triangles from back to front
-	std::sort (trianglesToRasterize.begin (), trianglesToRasterize.end (), [](TexturedTriangle &t1, TexturedTriangle &t2) {
+	std::sort (trianglesToRasterize.begin (), trianglesToRasterize.end (), [](Triangle &t1, Triangle &t2) {
 		float z1 = (t1.getP (0).getZ () + t1.getP (1).getZ () + t1.getP (2).getZ ()) / 3.0f;
 		float z2 = (t2.getP (0).getZ () + t2.getP (1).getZ () + t2.getP (2).getZ ()) / 3.0f;
 		return z1 > z2;
@@ -181,8 +181,8 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 		// Clip triangles against all four screen edges, this could yield
 		// a bunch of triangles, so create a queue that we traverse to 
 		//  ensure we only test new triangles generated against planes
-		TexturedTriangle clipped[2];
-		std::list<TexturedTriangle> listTriangles;
+		Triangle clipped[2];
+		std::list<Triangle> listTriangles;
 
 		// Add initial triangle
 		listTriangles.push_back (tri);
@@ -192,7 +192,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 			int nTrisToAdd = 0;
 			while (nNewTriangles > 0) {
 				// Take triangle from front of queue
-				TexturedTriangle test = listTriangles.front ();
+				Triangle test = listTriangles.front ();
 				listTriangles.pop_front ();
 				nNewTriangles--;
 
@@ -393,7 +393,7 @@ void Engine3D::DrawTexturedTriangle (int x1, int y1, float u1, float v1, float w
 }
 
 
-Mat4x4 Engine3D::pointAt (Vec3D &pos, Vec3D &target, Vec3D &up) const {
+Mat4x4 Engine3D::pointAt (Vec3D &pos, Vec3D &target, Vec3D &up) {
 	// Calculate new forward direction
 	Vec3D newForward = target - pos;
 	newForward = Vec3D::normalize (newForward);
@@ -431,7 +431,7 @@ Mat4x4 Engine3D::pointAt (Vec3D &pos, Vec3D &target, Vec3D &up) const {
 	return matrix;
 }
 
-int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, TexturedTriangle &in_tri, TexturedTriangle &out_tri1, TexturedTriangle &out_tri2) {
+int Engine3D::clipAgainstPlane (Vec3D plane_p, Vec3D plane_n, Triangle &in_tri, Triangle &out_tri1, Triangle &out_tri2) {
 	// Make sure plane normal is indeed normal
 	plane_n = Vec3D::normalize (plane_n);
 
