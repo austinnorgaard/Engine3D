@@ -13,7 +13,7 @@ Engine3D::Engine3D () {
 bool Engine3D::OnUserCreate () {
 	pDepthBuffer = new float[ScreenWidth () * ScreenHeight ()];
 
-	meshCube = Mesh ("log.obj");
+	meshCube = Mesh ("log.obj", true);
 
 	sprTex1 = new olc::Sprite ("log.jpg");
 
