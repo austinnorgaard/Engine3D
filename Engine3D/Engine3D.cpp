@@ -31,25 +31,25 @@ olc::Pixel GetColour (float lum) {
 bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	// Travel Upwards
 	if (GetKey (olc::UP).bHeld) {
-		vCamera.setY (vCamera.getY () + (8.0f * fElapsedTime));
+		vCamera.setY (vCamera.getY () + (2.0f * fElapsedTime));
 	}
 
 	// Travel Downwards
 	if (GetKey (olc::DOWN).bHeld) {
-		vCamera.setY (vCamera.getY () - (8.0f * fElapsedTime));
+		vCamera.setY (vCamera.getY () - (2.0f * fElapsedTime));
 	}
 
 	// Look Left
 	if (GetKey (olc::RIGHT).bHeld) {
-		vCamera.setX (vCamera.getX () + (8.0f * fElapsedTime));
+		vCamera.setX (vCamera.getX () + (2.0f * fElapsedTime));
 	}
 	
 	// Look Right
 	if (GetKey (olc::LEFT).bHeld) {
-		vCamera.setX (vCamera.getX () - (8.0f * fElapsedTime));
+		vCamera.setX (vCamera.getX () - (2.0f * fElapsedTime));
 	}
 
-	Vec3D vForward (vLookDirection * (8.0f * fElapsedTime));
+	Vec3D vForward (vLookDirection * (2.0f * fElapsedTime));
 
 	// Standard FPS Control scheme, but turn instead of strafe
 	if (GetKey (olc::W).bHeld)
@@ -59,10 +59,10 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 		vCamera = (vCamera - vForward);
 
 	if (GetKey (olc::A).bHeld)
-		fYaw -= 2.0f * fElapsedTime;
+		fYaw -= 0.5f * fElapsedTime;
 
 	if (GetKey (olc::D).bHeld)
-		fYaw += 2.0f * fElapsedTime;
+		fYaw += 0.5f * fElapsedTime;
 
 	Mat4x4 matRotZ, matRotX;
 	// fTheta += 1.0f * fElapsedTime;
@@ -230,7 +230,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 				t.getP (1).getX (), t.getP (1).getY (), t.getT (1).getU (), t.getT (1).getV (), t.getT (1).getW (),
 				t.getP (2).getX (), t.getP (2).getY (), t.getT (2).getU (), t.getT (2).getV (), t.getT (2).getW (), sprTex1);
 
-			// DrawTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getP (1).getX (), t.getP (1).getY (), t.getP (2).getX (), t.getP (2).getY (), olc::WHITE);
+			DrawTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getP (1).getX (), t.getP (1).getY (), t.getP (2).getX (), t.getP (2).getY (), olc::WHITE);
 		}
 		
 	}
