@@ -7,7 +7,7 @@
 int main () {
 	Engine3D demo;
 
-	if (demo.Construct(256, 240, 4, 4)) {
+	if (demo.Construct (512, 480, 2, 2)) {
 		demo.Start ();
 	}
 
