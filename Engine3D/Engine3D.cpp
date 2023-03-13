@@ -150,7 +150,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 				for (int i = 0; i < projectedTriangle.getSize (); i++) {
 					projectedTriangle.setP (i, (clipped[n].getP (i) * projMat));
 					projectedTriangle.setT (i, (clipped[n].getT (i)));
-
+					projectedTriangle.setT (i, (Vec2D ((projectedTriangle.getT (i).getU () / projectedTriangle.getP (i).getW ()), (projectedTriangle.getT (i).getV () / projectedTriangle.getP (i).getW ()), (1.0f / projectedTriangle.getP (i).getW ()))));
 					projectedTriangle.setP (i, projectedTriangle.getP (i) / projectedTriangle.getP (i).getW ());
 					projectedTriangle.setP (i, Vec3D (projectedTriangle.getP (i).getX () * -1.0f, projectedTriangle.getP (i).getY () * -1.0f, projectedTriangle.getP (i).getZ ()));
 					projectedTriangle.setP (i, projectedTriangle.getP (i) + vOffsetView);
