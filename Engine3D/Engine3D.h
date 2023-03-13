@@ -33,5 +33,5 @@ private:
 	Vec3D vLookDirection;
 	float fYaw;
 	olc::Sprite *sprTex1;
-	float *pDepthBuffer = nullptr;
+	float *pDepthBuffer;
 };

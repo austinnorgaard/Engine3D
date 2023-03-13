@@ -25,6 +25,9 @@ Triangle::Triangle (const Triangle &tri) {
 	p[0] = tri.p[0];
 	p[1] = tri.p[1];
 	p[2] = tri.p[2];
+	t[0] = tri.t[0];
+	t[1] = tri.t[1];
+	t[2] = tri.t[2];
 	size = tri.size;
 	col = tri.col;
 }

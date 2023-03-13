@@ -7,14 +7,15 @@
 
 Engine3D::Engine3D () {
 	sAppName = "3D Renderer/Engine";
+	pDepthBuffer = nullptr;
 }
 
 bool Engine3D::OnUserCreate () {
-	meshCube = Mesh ("Crate1.obj", true);
-
 	pDepthBuffer = new float[ScreenWidth () * ScreenHeight ()];
 
-	sprTex1 = new olc::Sprite ("crate_1.jpg");
+	meshCube = Mesh ("cube.obj", true);
+
+	sprTex1 = new olc::Sprite ("Jario.png");
 
 	// Projection Matrix
 	projMat = projMat.project (90.0f, (float) ScreenHeight () / (float) ScreenWidth (), 0.1f, 1000.0f);
@@ -149,9 +150,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 				for (int i = 0; i < projectedTriangle.getSize (); i++) {
 					projectedTriangle.setP (i, (clipped[n].getP (i) * projMat));
 					projectedTriangle.setT (i, (clipped[n].getT (i)));
-					projectedTriangle.setT (i, (Vec2D ((projectedTriangle.getT (i).getU () / projectedTriangle.getP (i).getW ()), projectedTriangle.getT (i).getV (), projectedTriangle.getT (i).getW ())));
-					projectedTriangle.setT (i, (Vec2D (projectedTriangle.getT (i).getU (), (projectedTriangle.getT (i).getV () / projectedTriangle.getP (i).getW ()), projectedTriangle.getT (i).getW ())));
-					projectedTriangle.setT (i, (Vec2D (projectedTriangle.getT (i).getU (), projectedTriangle.getT (i).getV (), (1.0f / projectedTriangle.getP (i).getW ()))));
+					projectedTriangle.setT (i, (Vec2D ((projectedTriangle.getT (i).getU () / projectedTriangle.getP (i).getW ()), (projectedTriangle.getT (i).getV () / projectedTriangle.getP (i).getW ()), (1.0f / projectedTriangle.getP (i).getW ()))));
 					projectedTriangle.setP (i, projectedTriangle.getP (i) / projectedTriangle.getP (i).getW ());
 					projectedTriangle.setP (i, Vec3D (projectedTriangle.getP (i).getX () * -1.0f, projectedTriangle.getP (i).getY () * -1.0f, projectedTriangle.getP (i).getZ ()));
 					projectedTriangle.setP (i, projectedTriangle.getP (i) + vOffsetView);
@@ -230,6 +229,8 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 			DrawTexturedTriangle (t.getP(0).getX (), t.getP(0).getY (), t.getT(0).getU (), t.getT(0).getV (), t.getT (0).getW (),
 				t.getP (1).getX (), t.getP (1).getY (), t.getT (1).getU (), t.getT (1).getV (), t.getT (1).getW (),
 				t.getP (2).getX (), t.getP (2).getY (), t.getT (2).getU (), t.getT (2).getV (), t.getT (2).getW (), sprTex1);
+
+			// DrawTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getP (1).getX (), t.getP (1).getY (), t.getP (2).getX (), t.getP (2).getY (), olc::WHITE);
 		}
 		
 	}
@@ -280,9 +281,9 @@ void Engine3D::DrawTexturedTriangle (int x1, int y1, float u1, float v1, float w
 	float tex_u, tex_v, tex_w;
 
 	float dax_step = 0, dbx_step = 0,
-		  du1_step = 0, dv1_step = 0,
-		  du2_step = 0, dv2_step = 0,
-		  dw1_step = 0, dw2_step = 0;
+		du1_step = 0, dv1_step = 0,
+		du2_step = 0, dv2_step = 0,
+		dw1_step = 0, dw2_step = 0;
 
 	if (dy1) dax_step = dx1 / (float) abs (dy1);
 	if (dy2) dbx_step = dx2 / (float) abs (dy2);
