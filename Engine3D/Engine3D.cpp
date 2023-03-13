@@ -13,9 +13,9 @@ Engine3D::Engine3D () {
 bool Engine3D::OnUserCreate () {
 	pDepthBuffer = new float[ScreenWidth () * ScreenHeight ()];
 
-	meshCube = Mesh ("cube.obj", true);
+	meshCube = Mesh ("log.obj");
 
-	sprTex1 = new olc::Sprite ("Jario.png");
+	sprTex1 = new olc::Sprite ("log.jpg");
 
 	// Projection Matrix
 	projMat = projMat.project (90.0f, (float) ScreenHeight () / (float) ScreenWidth (), 0.1f, 1000.0f);
