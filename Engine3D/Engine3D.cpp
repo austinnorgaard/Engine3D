@@ -10,7 +10,7 @@ Engine3D::Engine3D () {
 	pDepthBuffer = nullptr;
 	sprTex = nullptr;
 	decalTex = nullptr;
-	numSprites = 4;
+	numSprites = 1;
 	whichSpritesIndex = 0;
 }
 
@@ -19,9 +19,9 @@ bool Engine3D::OnUserCreate () {
 
 	pDepthBuffer = new float[ScreenWidth () * ScreenHeight ()];
 
-	meshCube = Mesh ("lamp.obj", true);
+	meshCube = Mesh ("cola_can.obj", true);
 
-	sprTex = new olc::Sprite ("lampnormal.png");
+	sprTex = new olc::Sprite ("cola_can_tex.jpg");
 
 	vSprites.push_back (sprTex);
 
@@ -100,7 +100,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	matRotX = Mat4x4::rotateX (fTheta);
 
 	Mat4x4 transMat;
-	transMat = Mat4x4::translate (0.0f, 0.0f, 2.0f);
+	transMat = Mat4x4::translate (0.0f, 0.0f, 10.0f);
 
 	Mat4x4 worldMat;
 	worldMat = Mat4x4::identity ();
@@ -129,7 +129,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 		for (int i = whichSpritesIndex; i < vDecals.size (); i++) {
 			layerTris.push_back (new Triangle (transformedTriangle));
 			for (int j = 0; j < transformedTriangle.getSize (); j++) {
-				layerTris.at (i)->setP (j, (tri.getP (j) * Mat4x4::scale (float(3 + (0.00001 * i)), worldMat)));
+				layerTris.at (i)->setP (j, (tri.getP (j) * Mat4x4::scale (float(1 + (0.00001 * i)), worldMat)));
 				layerTris.at (i)->setT (j, tri.getT (j));
 			}
 		}
