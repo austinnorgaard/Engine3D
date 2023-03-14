@@ -129,7 +129,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 		for (int i = whichSpritesIndex; i < vDecals.size (); i++) {
 			layerTris.push_back (new Triangle (transformedTriangle));
 			for (int j = 0; j < transformedTriangle.getSize (); j++) {
-				layerTris.at (i)->setP (j, (tri.getP (j) * Mat4x4::scale (float(1 + (0.000001 * i)), worldMat)));
+				layerTris.at (i)->setP (j, (tri.getP (j) * Mat4x4::scale (float(5 + (0.1 * i)), worldMat)));
 				layerTris.at (i)->setT (j, tri.getT (j));
 			}
 		}
