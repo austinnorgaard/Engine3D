@@ -16,15 +16,20 @@ bool Mesh::loadFromObjectFile (std::string sFileName, bool bIsTexture) {
 	
 
 	while (!f.eof ()) {
-		char line[128];
-		f.getline (line, 128);
+		char line[256];
+		bool bIsCompFace = false;
+		f.getline (line, 256);
 
 		std::strstream s;
 		s << line;
 
 		char unUsed;
 
-		if (line[0] == 'v') {
+		if (line[0] == 'g' || line[0] == 's') {
+			s >> unUsed;
+		}
+
+		else if (line[0] == 'v') {
 			if (line[1] == 't') {
 				Vec2D v;
 				s >> unUsed >> unUsed >> v;
@@ -37,7 +42,13 @@ bool Mesh::loadFromObjectFile (std::string sFileName, bool bIsTexture) {
 			}
 		}
 
-		if (!bIsTexture) {
+		for (int i = 0; i < sizeof(line) && line[i] != NULL; i++) {
+			if (line[i] == '/') {
+				bIsCompFace = true;
+			}
+		}
+
+		if (!bIsTexture || !bIsCompFace) {
 			if (line[0] == 'f') {
 				int f[3];
 				s >> unUsed >> f[0] >> f[1] >> f[2];
@@ -52,7 +63,6 @@ bool Mesh::loadFromObjectFile (std::string sFileName, bool bIsTexture) {
 
 				std::string tokens[6];
 				int nTokenCount = -1;
-
 
 				while (!s.eof ()) {
 					char c = s.get ();

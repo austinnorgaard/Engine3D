@@ -63,6 +63,15 @@ Mat4x4 Mat4x4::translate (float x, float y, float z) {
 	return m;
 }
 
+Mat4x4 Mat4x4::scale (float k, Mat4x4 &matrix) {
+	Mat4x4 m = matrix;
+	m.mat[0][0] *= k;
+	m.mat[1][1] *= k;
+	m.mat[2][2] *= k;
+	m.mat[3][3] = 1.0f;
+	return m;
+}
+
 Mat4x4 Mat4x4::project (float fFovDegrees, float fAspectRatio, float fNear, float fFar) {
 	float fFovRad = 1.0f / tanf (fFovDegrees * 0.5f / 180.0f * 3.14159f);
 	mat[0][0] = fAspectRatio * fFovRad;

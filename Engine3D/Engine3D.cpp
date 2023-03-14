@@ -8,18 +8,40 @@
 Engine3D::Engine3D () {
 	sAppName = "3D Renderer/Engine";
 	pDepthBuffer = nullptr;
-	sprTex1 = nullptr;
-	decalTex1 = nullptr;
+	sprTex = nullptr;
+	decalTex = nullptr;
+	numSprites = 4;
+	whichSpritesIndex = 0;
 }
 
 bool Engine3D::OnUserCreate () {
+	// Index to determine which sprites to load
+
 	pDepthBuffer = new float[ScreenWidth () * ScreenHeight ()];
 
-	meshCube = Mesh ("log.obj", true);
+	meshCube = Mesh ("lamp.obj", true);
 
-	sprTex1 = new olc::Sprite ("log.jpg");
+	sprTex = new olc::Sprite ("lampnormal.png");
 
-	decalTex1 = new olc::Decal (sprTex1);
+	vSprites.push_back (sprTex);
+
+	sprTex = new olc::Sprite ("lampmetal.png");
+
+	vSprites.push_back (sprTex);
+
+	sprTex = new olc::Sprite ("lamprough.png");
+
+	vSprites.push_back (sprTex);
+
+	sprTex = new olc::Sprite ("lamp.png");
+
+	vSprites.push_back (sprTex);
+
+
+	for (int i = whichSpritesIndex; i < numSprites; i++) {
+		decalTex = new olc::Decal (vSprites.at (i));
+		vDecals.push_back (decalTex);
+	}
 
 	// Projection Matrix
 	projMat = projMat.project (90.0f, (float) ScreenHeight () / (float) ScreenWidth (), 0.1f, 1000.0f);
@@ -78,7 +100,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	matRotX = Mat4x4::rotateX (fTheta);
 
 	Mat4x4 transMat;
-	transMat = Mat4x4::translate (0.0f, 0.0f, 5.0f);
+	transMat = Mat4x4::translate (0.0f, 0.0f, 2.0f);
 
 	Mat4x4 worldMat;
 	worldMat = Mat4x4::identity ();
@@ -96,73 +118,103 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	Mat4x4 viewMatrix = Mat4x4::inverse (cameraMatrix);
 
 	// Store triangles
-	std::vector<Triangle> trianglesToRasterize;
+	std::vector<std::vector<Triangle *>> trianglesToRasterize;
 
 	// Draw Triangles
 
 	for (auto &tri : meshCube.getTris ()) {
+		std::vector<Triangle *> layerTris;
 		Triangle projectedTriangle, transformedTriangle, viewedTriangle;
 
-		for (int i = 0; i < transformedTriangle.getSize (); i++) {
-			transformedTriangle.setP (i, (tri.getP (i) * worldMat));
-			transformedTriangle.setT (i, tri.getT (i));
+		for (int i = whichSpritesIndex; i < vDecals.size (); i++) {
+			layerTris.push_back (new Triangle (transformedTriangle));
+			for (int j = 0; j < transformedTriangle.getSize (); j++) {
+				layerTris.at (i)->setP (j, (tri.getP (j) * Mat4x4::scale (float(1 + (0.000001 * i)), worldMat)));
+				layerTris.at (i)->setT (j, tri.getT (j));
+			}
 		}
 
+		/*for (int i = 0; i < transformedTriangle.getSize (); i++) {
+			transformedTriangle.setP (i, (tri.getP (i) * worldMat));
+			transformedTriangle.setT (i, tri.getT (i));
+		}*/
+
 		// Use Cross-Product to get surface normal
-		Vec3D normal, line1, line2;
-		
-		// Get lines of either side of triangle
-		line1 = transformedTriangle.getP (1) - transformedTriangle.getP (0);
-		line2 = transformedTriangle.getP (2) - transformedTriangle.getP (0);
+		Vec3D line1, line2, normal;
 
-		// Take cross product of lines to get normal to triangle surface
-		normal = Vec3D::crossProduct (line1, line2);
+		for (int cycle = 0; cycle < layerTris.size (); cycle++) {
+			// Get lines of either side of triangle
+			line1 = layerTris.at (cycle)->getP (1) - layerTris.at (cycle)->getP (0);
+			line2 = layerTris.at (cycle)->getP (2) - layerTris.at (cycle)->getP (0);
 
-		// Normalize the normal
-		normal = Vec3D::normalize (normal);
+			// Take cross product of lines to get normal to triangle surface
+			normal = Vec3D::crossProduct (line1, line2);
 
-		// Get ray from triangle to camera
-		Vec3D vCameraRay = transformedTriangle.getP (0) - vCamera;
-		
-		if (Vec3D::dotProduct(normal, vCameraRay) < 0.0f) {
+			// Normalize the normal
+			normal = Vec3D::normalize (normal);
 
-			// Illumination
-			Vec3D light_direction (0.0f, 1.0f, -1.0f);
-			light_direction = Vec3D::normalize (light_direction);
+			// Get ray from triangle to camera
+			Vec3D vCameraRay = layerTris.at (cycle)->getP (0) - vCamera;
 
-			// Alignment of light to triangle surface
-			float dpLD = std::max (0.1f, Vec3D::dotProduct (light_direction, normal));
+			if (Vec3D::dotProduct (normal, vCameraRay) < 0.0f) {
 
-			transformedTriangle.setColor(GetColour (dpLD));
+				// Illumination
+				//Vec3D light_direction (0.0f, 1.0f, -1.0f);
+				//light_direction = Vec3D::normalize (light_direction);
 
-			// Convert World Space --> View Space
-			for (int i = 0; i < viewedTriangle.getSize (); i++) {
-				viewedTriangle.setP (i, (transformedTriangle.getP (i) *viewMatrix));
-				viewedTriangle.setT (i, transformedTriangle.getT (i));
-			}
-			viewedTriangle.setColor (transformedTriangle.getColor ());
+				// Alignment of light to triangle surface
+				// float dpLD = std::max (0.1f, Vec3D::dotProduct (light_direction, normal));
 
-			// Clip Viewed Triangle against near plane, this could form two additional
-			// additional triangles. 
-			int nClippedTriangles = 0;
-			Triangle clipped[2];
-			nClippedTriangles = clipAgainstPlane ({0.0f, 0.0f, 0.1f}, {0.0f, 0.0f, 1.0f}, viewedTriangle, clipped[0], clipped[1]);
-			Vec3D vOffsetView = {1, 1, 0};
+				// transformedTriangle.setColor(GetColour (dpLD));
 
-			for (int n = 0; n < nClippedTriangles; n++) {
-				// Project triangles from 3D --> 2D
-				for (int i = 0; i < projectedTriangle.getSize (); i++) {
-					projectedTriangle.setP (i, (clipped[n].getP (i) * projMat));
-					projectedTriangle.setT (i, (clipped[n].getT (i)));
-					projectedTriangle.setT (i, (Vec2D (projectedTriangle.getT (i).getU () / projectedTriangle.getP (i).getW (), projectedTriangle.getT (i).getV () / projectedTriangle.getP (i).getW (), 1.0f / projectedTriangle.getP (i).getW ())));
-					projectedTriangle.setP (i, projectedTriangle.getP (i) / projectedTriangle.getP (i).getW ());
-					projectedTriangle.setP (i, Vec3D (projectedTriangle.getP (i).getX () * -1.0f, projectedTriangle.getP (i).getY () * -1.0f, projectedTriangle.getP (i).getZ ()));
-					projectedTriangle.setP (i, projectedTriangle.getP (i) + vOffsetView);
-					projectedTriangle.setP (i, Vec3D (projectedTriangle.getP (i).getX () *(0.5f * (float) ScreenWidth ()), projectedTriangle.getP (i).getY () *(0.5f * (float) ScreenHeight ()), projectedTriangle.getP (i).getZ ()));
+				// Convert World Space --> View Space
+				for (int j = 0; j < viewedTriangle.getSize (); j++) {
+					layerTris.at (cycle)->setP (j, (layerTris.at (cycle)->getP (j) * viewMatrix));
+					layerTris.at (cycle)->setT (j, layerTris.at (cycle)->getT (j));
 				}
-				projectedTriangle.setColor (clipped[n].getColor ());
 
-				trianglesToRasterize.push_back (projectedTriangle);
+				/*for (int i = 0; i < viewedTriangle.getSize (); i++) {
+					viewedTriangle.setP (i, (transformedTriangle.getP (i) * viewMatrix));
+					viewedTriangle.setT (i, transformedTriangle.getT (i));
+				}
+				viewedTriangle.setColor (transformedTriangle.getColor ());*/
+
+				// Clip Viewed Triangle against near plane, this could form two additional
+				// additional triangles. 
+				int nClippedTriangles = 0;
+				Triangle clipped[2];
+				std::vector <Triangle> layerClipped[2];
+				nClippedTriangles += clipAgainstPlane ({0.0f, 0.0f, 0.1f}, {0.0f, 0.0f, 1.0f}, *layerTris.at (cycle), clipped[0], clipped[1]);
+				layerClipped[0].push_back (clipped[0]);
+				layerClipped[1].push_back (clipped[1]);
+				// nClippedTriangles += clipAgainstPlane ({0.0f, 0.0f, 0.1f}, {0.0f, 0.0f, 1.0f}, viewedTriangle, clipped[0], clipped[1]);
+				Vec3D vOffsetView = {1, 1, 0};
+
+				for (int n = 0; n < layerClipped->size (); n++) {
+					// Project triangles from 3D --> 2D
+					for (int i = 0; i < projectedTriangle.getSize (); i++) {
+						layerTris.at (cycle)->setP (i, layerClipped[0].at (n).getP (i) * projMat);
+						layerTris.at (cycle)->setT (i, (layerClipped[0].at (n).getT (i)));
+						layerTris.at (cycle)->setT (i, (Vec2D (layerTris.at (cycle)->getT (i).getU () / layerTris.at (cycle)->getP (i).getW (), layerTris.at (cycle)->getT (i).getV () / layerTris.at (cycle)->getP (i).getW (), 1.0f / layerTris.at (cycle)->getP (i).getW ())));
+						layerTris.at (cycle)->setP (i, layerTris.at (cycle)->getP (i) / layerTris.at (cycle)->getP (i).getW ());
+						layerTris.at (cycle)->setP (i, Vec3D (layerTris.at (cycle)->getP (i).getX () * -1.0f, layerTris.at (cycle)->getP (i).getY () * -1.0f, layerTris.at (cycle)->getP (i).getZ ()));
+						layerTris.at (cycle)->setP (i, layerTris.at (cycle)->getP (i) + vOffsetView);
+						layerTris.at (cycle)->setP (i, Vec3D (layerTris.at (cycle)->getP (i).getX () * (0.5f * (float) ScreenWidth ()), layerTris.at (cycle)->getP (i).getY () * (0.5f * (float) ScreenHeight ()), layerTris.at (cycle)->getP (i).getZ ()));
+					}
+					/*for (int i = 0; i < projectedTriangle.getSize (); i++) {
+						projectedTriangle.setP (i, (clipped[n].getP (i) * projMat));
+						projectedTriangle.setT (i, (clipped[n].getT (i)));
+						projectedTriangle.setT (i, (Vec2D (projectedTriangle.getT (i).getU () / projectedTriangle.getP (i).getW (), projectedTriangle.getT (i).getV () / projectedTriangle.getP (i).getW (), 1.0f / projectedTriangle.getP (i).getW ())));
+						projectedTriangle.setP (i, projectedTriangle.getP (i) / projectedTriangle.getP (i).getW ());
+						projectedTriangle.setP (i, Vec3D (projectedTriangle.getP (i).getX () * -1.0f, projectedTriangle.getP (i).getY () * -1.0f, projectedTriangle.getP (i).getZ ()));
+						projectedTriangle.setP (i, projectedTriangle.getP (i) + vOffsetView);
+						projectedTriangle.setP (i, Vec3D (projectedTriangle.getP (i).getX () *(0.5f * (float) ScreenWidth ()), projectedTriangle.getP (i).getY () *(0.5f * (float) ScreenHeight ()), projectedTriangle.getP (i).getZ ()));
+					}
+					projectedTriangle.setColor (clipped[n].getColor ());*/
+					
+					// trianglesToRasterize.push_back (projectedTriangle);
+				}
+				trianglesToRasterize.push_back (layerTris);
 			}
 		}
 	}
@@ -180,63 +232,65 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 		pDepthBuffer[i] = 0.0f;
 	}
 
-	for (auto &tri : trianglesToRasterize) {
-		// Clip triangles against all four screen edges, this could yield
-		// a bunch of triangles, so create a queue that we traverse to 
-		//  ensure we only test new triangles generated against planes
-		Triangle clipped[2];
-		std::list<Triangle> listTriangles;
+	for (int cycles = 0; cycles < vDecals.size (); cycles++) {
+		for (auto &tri : trianglesToRasterize) {
+			// Clip triangles against all four screen edges, this could yield
+			// a bunch of triangles, so create a queue that we traverse to 
+			//  ensure we only test new triangles generated against planes
+			Triangle clipped[2];
+			std::list<Triangle> listTriangles;
 
-		// Add initial triangle
-		listTriangles.push_back (tri);
-		int nNewTriangles = 1;
+			// Add initial triangle
+			listTriangles.push_back (*tri.at (cycles));
+			int nNewTriangles = 1;
 
-		for (int p = 0; p < 4; p++) {
-			int nTrisToAdd = 0;
-			while (nNewTriangles > 0) {
-				// Take triangle from front of queue
-				Triangle test = listTriangles.front ();
-				listTriangles.pop_front ();
-				nNewTriangles--;
+			for (int p = 0; p < 4; p++) {
+				int nTrisToAdd = 0;
+				while (nNewTriangles > 0) {
+					// Take triangle from front of queue
+					Triangle test = listTriangles.front ();
+					listTriangles.pop_front ();
+					nNewTriangles--;
 
-				// Clip it against a plane. We only need to test each 
-				// subsequent plane, against subsequent new triangles
-				// as all triangles after a plane clip are guaranteed
-				// to lie on the inside of the plane. I like how this
-				// comment is almost completely and utterly justified
-				switch (p) {
-				case 0:	nTrisToAdd = clipAgainstPlane ({0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, test, clipped[0], clipped[1]);
-					break;
-				case 1:	nTrisToAdd = clipAgainstPlane ({0.0f, (float) ScreenHeight () - 1, 0.0f}, {0.0f, -1.0f, 0.0f}, test, clipped[0], clipped[1]);
-					break;
-				case 2:	nTrisToAdd = clipAgainstPlane ({0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, test, clipped[0], clipped[1]);
-					break;
-				case 3:	nTrisToAdd = clipAgainstPlane ({(float) ScreenWidth () - 1, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, test, clipped[0], clipped[1]); 
-					break;
+					// Clip it against a plane. We only need to test each 
+					// subsequent plane, against subsequent new triangles
+					// as all triangles after a plane clip are guaranteed
+					// to lie on the inside of the plane. I like how this
+					// comment is almost completely and utterly justified
+					switch (p) {
+					case 0:	nTrisToAdd = clipAgainstPlane ({0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, test, clipped[0], clipped[1]);
+						break;
+					case 1:	nTrisToAdd = clipAgainstPlane ({0.0f, (float) ScreenHeight () - 1, 0.0f}, {0.0f, -1.0f, 0.0f}, test, clipped[0], clipped[1]);
+						break;
+					case 2:	nTrisToAdd = clipAgainstPlane ({0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, test, clipped[0], clipped[1]);
+						break;
+					case 3:	nTrisToAdd = clipAgainstPlane ({(float) ScreenWidth () - 1, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, test, clipped[0], clipped[1]);
+						break;
+					}
+
+					// Clipping may yield a variable number of triangles, so
+					// add these new ones to the back of the queue for subsequent
+					// clipping against next planes
+					for (int w = 0; w < nTrisToAdd; w++) {
+						listTriangles.push_back (clipped[w]);
+					}
 				}
-
-				// Clipping may yield a variable number of triangles, so
-				// add these new ones to the back of the queue for subsequent
-				// clipping against next planes
-				for (int w = 0; w < nTrisToAdd; w++) {
-					listTriangles.push_back (clipped[w]);
-				}
+				nNewTriangles = listTriangles.size ();
 			}
-			nNewTriangles = listTriangles.size ();
+
+
+			// Draw the transformed, viewed, clipped, projected, sorted, clipped triangles
+			for (auto &t : listTriangles) {
+				// FillTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getP (1).getX (), t.getP (1).getY (), t.getP (2).getX (), t.getP (2).getY (), t.getColor ());
+				DrawTexturedTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getT (0).getU (), t.getT (0).getV (), t.getT (0).getW (),
+					t.getP (1).getX (), t.getP (1).getY (), t.getT (1).getU (), t.getT (1).getV (), t.getT (1).getW (),
+					t.getP (2).getX (), t.getP (2).getY (), t.getT (2).getU (), t.getT (2).getV (), t.getT (2).getW (), vDecals.at (cycles));
+
+				// Wire Frame for Debugging
+				// DrawTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getP (1).getX (), t.getP (1).getY (), t.getP (2).getX (), t.getP (2).getY (), olc::BLACK);
+			}
+
 		}
-
-
-		// Draw the transformed, viewed, clipped, projected, sorted, clipped triangles
-		for (auto &t : listTriangles) {
-		// FillTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getP (1).getX (), t.getP (1).getY (), t.getP (2).getX (), t.getP (2).getY (), t.getColor ());
-		// Wire Frame for Debugging
-			DrawTexturedTriangle (t.getP(0).getX (), t.getP(0).getY (), t.getT(0).getU (), t.getT(0).getV (), t.getT (0).getW (),
-				t.getP (1).getX (), t.getP (1).getY (), t.getT (1).getU (), t.getT (1).getV (), t.getT (1).getW (),
-				t.getP (2).getX (), t.getP (2).getY (), t.getT (2).getU (), t.getT (2).getV (), t.getT (2).getW (), decalTex1);
-
-			// DrawTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getP (1).getX (), t.getP (1).getY (), t.getP (2).getX (), t.getP (2).getY (), olc::WHITE);
-		}
-		
 	}
 
 	return true;
@@ -245,7 +299,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 void Engine3D::DrawTexturedTriangle (int x1, int y1, float u1, float v1, float w1,
 									 int x2, int y2, float u2, float v2, float w2,
 									 int x3, int y3, float u3, float v3, float w3,
-									 olc::Decal *tex) {
+									 olc::Decal *texture) {
 	if (y2 < y1) {
 		std::swap (y1, y2);
 		std::swap (x1, x2);
@@ -332,7 +386,7 @@ void Engine3D::DrawTexturedTriangle (int x1, int y1, float u1, float v1, float w
 				tex_v = (1.0f - t) * tex_sv + t * tex_ev;
 				tex_w = (1.0f - t) * tex_sw + t * tex_ew;
 				if (tex_w > pDepthBuffer[i * ScreenWidth () + j]) {
-					Draw (j, i, tex->sprite->Sample (tex_u / tex_w, tex_v / tex_w));
+					Draw (j, i, texture->sprite->Sample (tex_u / tex_w, tex_v / tex_w));
 					pDepthBuffer[i * ScreenWidth () + j] = tex_w;
 				}
 				t += tstep;
@@ -388,7 +442,7 @@ void Engine3D::DrawTexturedTriangle (int x1, int y1, float u1, float v1, float w
 				tex_w = (1.0f - t) * tex_sw + t * tex_ew;
 
 				if (tex_w > pDepthBuffer[i * ScreenWidth () + j]) {
-					Draw (j, i, tex->sprite->Sample (tex_u / tex_w, tex_v / tex_w));
+					Draw (j, i, texture->sprite->Sample (tex_u / tex_w, tex_v / tex_w));
 					pDepthBuffer[i * ScreenWidth () + j] = tex_w;
 				}
 				t += tstep;
