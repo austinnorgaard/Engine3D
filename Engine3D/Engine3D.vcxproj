@@ -203,8 +203,8 @@
   <ItemGroup>
     <ClInclude Include="Mat4x4.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="olcPixelGameEngine.h" />
     <ClInclude Include="Engine3D.h" />
+    <ClInclude Include="olcPixelGameEngine.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="Vec2D.h" />
     <ClInclude Include="Vec3D.h" />

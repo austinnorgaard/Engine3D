@@ -8,6 +8,8 @@
 Engine3D::Engine3D () {
 	sAppName = "3D Renderer/Engine";
 	pDepthBuffer = nullptr;
+	sprTex1 = nullptr;
+	decalTex1 = nullptr;
 }
 
 bool Engine3D::OnUserCreate () {
@@ -16,6 +18,8 @@ bool Engine3D::OnUserCreate () {
 	meshCube = Mesh ("log.obj", true);
 
 	sprTex1 = new olc::Sprite ("log.jpg");
+
+	decalTex1 = new olc::Decal (sprTex1);
 
 	// Projection Matrix
 	projMat = projMat.project (90.0f, (float) ScreenHeight () / (float) ScreenWidth (), 0.1f, 1000.0f);
@@ -150,7 +154,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 				for (int i = 0; i < projectedTriangle.getSize (); i++) {
 					projectedTriangle.setP (i, (clipped[n].getP (i) * projMat));
 					projectedTriangle.setT (i, (clipped[n].getT (i)));
-					projectedTriangle.setT (i, (Vec2D ((projectedTriangle.getT (i).getU () / projectedTriangle.getP (i).getW ()), (projectedTriangle.getT (i).getV () / projectedTriangle.getP (i).getW ()), (1.0f / projectedTriangle.getP (i).getW ()))));
+					projectedTriangle.setT (i, (Vec2D (projectedTriangle.getT (i).getU () / projectedTriangle.getP (i).getW (), projectedTriangle.getT (i).getV () / projectedTriangle.getP (i).getW (), 1.0f / projectedTriangle.getP (i).getW ())));
 					projectedTriangle.setP (i, projectedTriangle.getP (i) / projectedTriangle.getP (i).getW ());
 					projectedTriangle.setP (i, Vec3D (projectedTriangle.getP (i).getX () * -1.0f, projectedTriangle.getP (i).getY () * -1.0f, projectedTriangle.getP (i).getZ ()));
 					projectedTriangle.setP (i, projectedTriangle.getP (i) + vOffsetView);
@@ -164,13 +168,13 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 	}
 
 	// Sort triangles from back to front
-	std::sort (trianglesToRasterize.begin (), trianglesToRasterize.end (), [](Triangle &t1, Triangle &t2) {
+	/*std::sort (trianglesToRasterize.begin (), trianglesToRasterize.end (), [](Triangle &t1, Triangle &t2) {
 		float z1 = (t1.getP (0).getZ () + t1.getP (1).getZ () + t1.getP (2).getZ ()) / 3.0f;
 		float z2 = (t2.getP (0).getZ () + t2.getP (1).getZ () + t2.getP (2).getZ ()) / 3.0f;
 		return z1 > z2;
-		});
+		});*/
 
-	FillRect (0, 0, ScreenWidth (), ScreenHeight (), olc::BLACK);
+	FillRect (0, 0, ScreenWidth (), ScreenHeight (), olc::WHITE);
 
 	for (int i = 0; i < ScreenWidth () * ScreenHeight (); i++) {
 		pDepthBuffer[i] = 0.0f;
@@ -228,9 +232,9 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 		// Wire Frame for Debugging
 			DrawTexturedTriangle (t.getP(0).getX (), t.getP(0).getY (), t.getT(0).getU (), t.getT(0).getV (), t.getT (0).getW (),
 				t.getP (1).getX (), t.getP (1).getY (), t.getT (1).getU (), t.getT (1).getV (), t.getT (1).getW (),
-				t.getP (2).getX (), t.getP (2).getY (), t.getT (2).getU (), t.getT (2).getV (), t.getT (2).getW (), sprTex1);
+				t.getP (2).getX (), t.getP (2).getY (), t.getT (2).getU (), t.getT (2).getV (), t.getT (2).getW (), decalTex1);
 
-			DrawTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getP (1).getX (), t.getP (1).getY (), t.getP (2).getX (), t.getP (2).getY (), olc::WHITE);
+			// DrawTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getP (1).getX (), t.getP (1).getY (), t.getP (2).getX (), t.getP (2).getY (), olc::WHITE);
 		}
 		
 	}
@@ -241,7 +245,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 void Engine3D::DrawTexturedTriangle (int x1, int y1, float u1, float v1, float w1,
 									 int x2, int y2, float u2, float v2, float w2,
 									 int x3, int y3, float u3, float v3, float w3,
-									 olc::Sprite *tex) {
+									 olc::Decal *tex) {
 	if (y2 < y1) {
 		std::swap (y1, y2);
 		std::swap (x1, x2);
@@ -328,7 +332,7 @@ void Engine3D::DrawTexturedTriangle (int x1, int y1, float u1, float v1, float w
 				tex_v = (1.0f - t) * tex_sv + t * tex_ev;
 				tex_w = (1.0f - t) * tex_sw + t * tex_ew;
 				if (tex_w > pDepthBuffer[i * ScreenWidth () + j]) {
-					Draw (j, i, tex->Sample (tex_u / tex_w, tex_v / tex_w));
+					Draw (j, i, tex->sprite->Sample (tex_u / tex_w, tex_v / tex_w));
 					pDepthBuffer[i * ScreenWidth () + j] = tex_w;
 				}
 				t += tstep;
@@ -384,7 +388,7 @@ void Engine3D::DrawTexturedTriangle (int x1, int y1, float u1, float v1, float w
 				tex_w = (1.0f - t) * tex_sw + t * tex_ew;
 
 				if (tex_w > pDepthBuffer[i * ScreenWidth () + j]) {
-					Draw (j, i, tex->Sample (tex_u / tex_w, tex_v / tex_w));
+					Draw (j, i, tex->sprite->Sample (tex_u / tex_w, tex_v / tex_w));
 					pDepthBuffer[i * ScreenWidth () + j] = tex_w;
 				}
 				t += tstep;
