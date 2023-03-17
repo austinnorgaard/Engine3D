@@ -5,7 +5,10 @@
 #include <algorithm>
 
 int main () {
-	Engine3D demo;
+	std::vector<std::string> objectFileNames = {"log.obj", "lamp.obj"};
+	std::vector<std::string> logTextureFileNames = {"log.jpg"};
+
+	Engine3D demo (objectFileNames, logTextureFileNames);
 
 	if (demo.Construct (512, 256, 2, 2)) {
 		demo.Start ();

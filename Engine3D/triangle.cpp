@@ -2,6 +2,7 @@
 
 Triangle::Triangle () {
 	size = 3;
+	col = 0;
 }
 
 Triangle::Triangle (Vec2D vec1, Vec2D vec2, Vec2D vec3) {

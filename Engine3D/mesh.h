@@ -9,9 +9,9 @@
 class Mesh {
 public:
 	Mesh ();
-	Mesh (std::string sFileName, bool bIsTexture = false);
+	Mesh (std::string sFileName, bool bIsTexture = true);
 
-	bool loadFromObjectFile (std::string sFileName, bool bIsTexture = false);
+	bool loadFromObjectFile (std::string sFileName, bool bIsTexture = true);
 
 	std::vector<Triangle> getTris ();
 
