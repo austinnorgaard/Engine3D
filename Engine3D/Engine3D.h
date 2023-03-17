@@ -28,7 +28,7 @@ public:
 		int x3, int y3, float u3, float v3, float w3,
 		olc::Decal *texture);
 
-	void DrawTexturedTriangle (Object *object);
+	void DrawTexturedTriangle (Object *object, int layer);
 
 	float *getPDepth ();
 

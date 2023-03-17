@@ -6,7 +6,7 @@
 
 int main () {
 	std::vector<std::string> objectFileNames = {"log.obj", "lamp.obj"};
-	std::vector<std::string> logTextureFileNames = {"log.jpg"};
+	std::vector<std::string> logTextureFileNames = {"log.jpg", "lamp.png"};
 
 	Engine3D demo (objectFileNames, logTextureFileNames);
 

@@ -117,6 +117,7 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 		pDepthBuffer[i] = 0.0f;
 	}
 
+	iterator = 0;
 	for (auto &object : world) {
 		for (auto &tri : object->getTrisToRasterize ()) {
 			object->CheckViewClip (tri);
@@ -124,10 +125,11 @@ bool Engine3D::OnUserUpdate (float fElapsedTime) {
 			// Draw the transformed, viewed, clipped, projected, sorted, clipped triangles
 
 			// FillTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getP (1).getX (), t.getP (1).getY (), t.getP (2).getX (), t.getP (2).getY (), t.getColor ());
-			DrawTexturedTriangle (object);
+			DrawTexturedTriangle (object, iterator);
 			// Wire Frame for Debugging
 			// DrawTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getP (1).getX (), t.getP (1).getY (), t.getP (2).getX (), t.getP (2).getY (), olc::BLACK);
 		}
+		iterator++;
 	}
 
 	return true;
@@ -289,11 +291,11 @@ void Engine3D::DrawTexturedTriangle (int x1, int y1, float u1, float v1, float w
 	}
 }
 
-void Engine3D::DrawTexturedTriangle (Object *object) {
+void Engine3D::DrawTexturedTriangle (Object *object, int layer) {
 	for (auto &t : object->getLTris ()) {
 		DrawTexturedTriangle (t.getP (0).getX (), t.getP (0).getY (), t.getT (0).getU (), t.getT (0).getV (), t.getT (0).getW (),
 			t.getP (1).getX (), t.getP (1).getY (), t.getT (1).getU (), t.getT (1).getV (), t.getT (1).getW (),
-			t.getP (2).getX (), t.getP (2).getY (), t.getT (2).getU (), t.getT (2).getV (), t.getT (2).getW (), object->getDecal (0));
+			t.getP (2).getX (), t.getP (2).getY (), t.getT (2).getU (), t.getT (2).getV (), t.getT (2).getW (), object->getDecal (layer));
 	}
 }
 
